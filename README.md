@@ -9,7 +9,7 @@ A reading desk for software engineers who want to get better at **system design*
 - **This week**: a 7-day strip, the week's most-discussed Hacker News stories, and a day-by-day timeline. Browse older weeks with ← →.
 - **Learn**: both tracks as a reading list. Bookmark posts, tick them off as read, and follow your streak and per-track progress.
 
-**Sources (36)**
+**Sources (35)**
 - *AI labs:* Anthropic Engineering, OpenAI, Google DeepMind, Google Research, Hugging Face, Microsoft Research
 - *Engineering blogs:* Meta, Netflix, Cloudflare, GitHub, Airbnb, Dropbox, Slack, Pinterest, Shopify, Spotify, AWS Architecture, Databricks, LangChain, InfoQ Architecture
 - *Newsletters & engineers:* ByteByteGo, The System Design Newsletter, System Design Codex, Arpit Bhayani, All Things Distributed (Werner Vogels), Marc Brooker, Murat Demirbas, The Pragmatic Engineer, Martin Fowler, Simon Willison, Hamel Husain, Latent Space, Eugene Yan, Lilian Weng
