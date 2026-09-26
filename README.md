@@ -19,6 +19,18 @@ python server.py            # open http://localhost:8000
 
 Dates follow this computer's time zone. The server scrapes all sources at startup and then every 30 minutes (`--interval 15` to change). The page's **Refresh** button scrapes immediately. To scrape without the server, run `python scraper.py`.
 
+## Deploy to GitHub Pages (free)
+
+`.github/workflows/update.yml` rebuilds the site every 30 minutes on GitHub's machines:
+
+1. `python build.py restore <site URL>` downloads the currently published posts and daily archive, so history carries over between runs.
+2. `python build.py` scrapes every source and writes a static copy of the site to `site/`.
+3. GitHub Pages publishes `site/` at `https://<user>.github.io/<repo>/`.
+
+On the static site, reading progress is stored in each visitor's browser. Use **Export progress / Import** in the Learn tab to move it between browsers. To set it up: push the repo, then Settings → Pages → Source: **GitHub Actions**, and run the workflow once from the Actions tab.
+
+To try the static build locally: `python build.py && python -m http.server -d site 8001`.
+
 ## How it works
 
 | File | Role |
@@ -28,6 +40,7 @@ Dates follow this computer's time zone. The server scrapes all sources at startu
 | `topics.py` | Tags each post with learning topics and decides whether it's a deep dive or an announcement, using keyword lists you can edit. |
 | `progress.py` | Your saved and read posts plus stats (streak, per-topic counts), stored in `data/progress.json`. Each entry keeps a copy of the post, so your reading list survives after posts drop off their feeds. |
 | `editions.py` | Files each post under the day it was published (one file per day in `data/editions/`) and builds the week view. Files are only added to, so past weeks stay complete after posts drop off the source feeds. Hacker News history starts from your first run, because its search only looks back 7 days. |
+| `build.py` | Builds the static site for GitHub Pages (`site/`), and restores the previous run's data from the live site. |
 | `server.py` | Serves the page and `/api/news`, and refreshes in the background. Python standard library only. |
 | `static/index.html` | The page. Colors follow [The Daily Diff](https://tdd.cat/) (dark by default, light available); fonts are Source Serif 4 and DM Sans. Links: `/#week`, `/#week-2026-09-19`, `/#learn`. |
 

@@ -1,0 +1,51 @@
+# Scrape all sources and publish the site to GitHub Pages every 30 minutes.
+name: Update AI Wire
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # GitHub may start scheduled runs a few minutes late
+  workflow_dispatch:           # "Run workflow" button in the Actions tab
+  push:
+    branches: [main]           # redeploy when the code changes
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false    # never run two updates at once
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      TZ: Asia/Kolkata         # which calendar day a post belongs to
+      SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Each run starts on a blank machine: pull the previous posts and daily
+      # archive from the live site so history keeps growing between runs.
+      - name: Restore data from the live site
+        run: python build.py restore "$SITE_URL"
+
+      - name: Scrape and build
+        run: python build.py
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

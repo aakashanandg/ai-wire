@@ -24,7 +24,7 @@ from topics import classify
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 DATA_FILE = Path(__file__).parent / "data" / "news.json"
-USER_AGENT = "Mozilla/5.0 (compatible; ai-news-aggregator/1.0; personal use)"
+USER_AGENT = "Mozilla/5.0 (compatible; AI-Wire/1.0; news aggregator, fetches each feed at most every 30 min)"
 TIMEOUT = 25
 MAX_PER_SOURCE = 40
 MAX_AGE_DAYS = 365

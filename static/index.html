@@ -225,6 +225,10 @@ footer .bad { color: var(--accent); }
 .next a { font: 600 15px/1.35 var(--serif); display: block; }
 .next a:hover { color: var(--accent); }
 .next .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
+.io { display: flex; gap: 14px; border-top: 1px solid var(--line); padding: 10px 0 6px; }
+.io button { background: none; border: 0; padding: 0; font-size: 12.5px; color: var(--faint); text-decoration: underline; text-underline-offset: 3px; }
+.io button:hover { color: var(--accent); }
+body.static #refresh { display: none; }
 
 @media (max-width: 900px) {
   .layout, .learn { grid-template-columns: 1fr; gap: 28px; }
@@ -345,6 +349,15 @@ const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); 
 const color = (org) => ORG_COLORS[org] || "var(--faint)";
 const topicsOf = (p) => p.topics?.length ? p.topics : ["general"];
 
+// Two modes: the local server (python server.py) or static files built by build.py
+// for GitHub Pages. In static mode there's no server to write to, so reading
+// progress lives in this browser instead.
+const STATIC = window.AIWIRE_STATIC === true;
+const URLS = STATIC
+  ? { news: "data/news.json", days: "data/editions/index.json", day: (d) => `data/editions/${d}.json` }
+  : { news: "api/news", days: "api/editions", day: (d) => `api/editions/${d}` };
+const getJSON = (url) => fetch(url, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(r.status + " " + url); return r.json(); });
+
 let data = { posts: [], sources: [] };
 let prog = { posts: {}, stats: {} };
 let group = store.get("aiwire.group", "all");
@@ -395,11 +408,43 @@ function postCard(p) {
     </div>${actions(p)}</article>`;
 }
 
+// Browser-side progress (static mode). Mirrors progress.py: same fields, same stats.
+const PROGRESS_KEY = "aiwire.progress";
+const KEEP = ["title", "url", "date", "summary", "source", "source_name", "org", "group", "topics", "deep_dive"];
+function progressStats(posts) {
+  const read = Object.values(posts).filter((e) => e.read_at);
+  const readDays = new Set(read.map((e) => new Date(e.read_at).toLocaleDateString("en-CA")));
+  let streak = 0, day = todayStr();
+  if (!readDays.has(day)) day = shiftDay(day, -1);  // don't break the streak first thing in the morning
+  while (readDays.has(day)) { streak++; day = shiftDay(day, -1); }
+  const by_topic = {};
+  for (const e of read) for (const t of topicsOf(e)) by_topic[t] = (by_topic[t] || 0) + 1;
+  return {
+    read: read.length, streak, by_topic,
+    saved: Object.values(posts).filter((e) => e.saved_at && !e.read_at).length,
+    read_this_week: read.filter((e) => Date.now() - new Date(e.read_at) < 7 * 86400000).length,
+  };
+}
+const localProgress = () => { const posts = store.get(PROGRESS_KEY, {}); return { posts, stats: progressStats(posts) }; };
+
 async function setProgress(url, change) {
   const post = data.posts.find((p) => p.url === url) || prog.posts[url];
   if (!post) return;
-  const res = await fetch("/api/progress", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post, ...change }) });
-  if (res.ok) { prog = await res.json(); renderFeed(); renderLearn(); }
+  if (STATIC) {
+    const posts = store.get(PROGRESS_KEY, {});
+    const e = { ...(posts[url] || {}), ...Object.fromEntries(KEEP.filter((k) => k in post).map((k) => [k, post[k]])) };
+    const now = new Date().toISOString();
+    if ("saved" in change) e.saved_at = change.saved ? now : null;
+    if ("read" in change) e.read_at = change.read ? now : null;
+    if (e.saved_at || e.read_at) posts[url] = e; else delete posts[url];
+    store.set(PROGRESS_KEY, posts);
+    prog = localProgress();
+  } else {
+    const res = await fetch("api/progress", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post, ...change }) });
+    if (!res.ok) return;
+    prog = await res.json();
+  }
+  renderFeed(); renderLearn();
 }
 document.addEventListener("click", (ev) => {
   const b = ev.target.closest("[data-act]");
@@ -525,9 +570,26 @@ let weekEnd = location.hash.match(/^#week-(\d{4}-\d{2}-\d{2})$/)?.[1] || null;
 const fmtDay = (day, opts) => new Date(day + "T12:00:00").toLocaleDateString(undefined, opts);
 const todayStr = () => new Date().toLocaleDateString("en-CA");
 const localDay = (p) => when(p).toLocaleDateString("en-CA");
+const shiftDay = (day, n) => { const d = new Date(day + "T12:00:00"); d.setDate(d.getDate() + n); return d.toLocaleDateString("en-CA"); };
+
+async function fetchWeek(end) {
+  const index = await getJSON(URLS.days);
+  const have = new Set(index.map((e) => e.date));
+  const days = Array.from({ length: 7 }, (_, i) => shiftDay(end, -i));
+  const empty = (date) => ({ date, labs: [], hn: [], counts: { labs: 0, orgs: 0, hn: 0 } });
+  const eds = await Promise.all(days.map((d) => have.has(d) ? getJSON(URLS.day(d)).catch(() => empty(d)) : empty(d)));
+  const newer = end < todayStr() ? (shiftDay(end, 7) < todayStr() ? shiftDay(end, 7) : todayStr()) : null;
+  return {
+    start: days[6], end: days[0], days: eds,
+    top: eds.flatMap((e) => e.hn).sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 5),
+    counts: { labs: eds.reduce((n, e) => n + e.counts.labs, 0), hn: eds.reduce((n, e) => n + e.counts.hn, 0) },
+    older: index.some((e) => e.date < days[6]) ? shiftDay(end, -7) : null,
+    newer,
+  };
+}
 
 async function loadWeek() {
-  const w = await (await fetch("/api/week" + (weekEnd ? "?end=" + weekEnd : ""))).json();
+  const w = await fetchWeek(weekEnd || todayStr());
   if (view === "week") history.replaceState(null, "", weekEnd ? "#week-" + weekEnd : "#week");
   const range = `${fmtDay(w.start, { month: "short", day: "numeric" })} – ${fmtDay(w.end, { month: "short", day: "numeric" })}`;
   const max = Math.max(1, ...w.days.map((d) => Math.max(d.counts.labs, d.counts.hn)));
@@ -610,7 +672,7 @@ function renderProgress(pool) {
   const saved = Object.values(prog.posts).filter((e) => e.saved_at && !e.read_at).sort((a, b) => new Date(a.saved_at) - new Date(b.saved_at));
   const weakest = [...tracks].sort((a, b) => a.read / a.total - b.read / b.total)[0];
   const suggestion = saved[0] || (weakest && pool.filter((p) => topicsOf(p).includes(weakest.k) && !prog.posts[p.url]?.read_at).sort(newestFirst)[0]);
-  $("progress").innerHTML = `<h3>Your progress</h3><p class="sub">Saved on this computer</p>
+  $("progress").innerHTML = `<h3>Your progress</h3><p class="sub">${STATIC ? "Saved in this browser" : "Saved on this computer"}</p>
     <div class="stats"><div class="stat"><b>${s.streak || 0}</b><span>day streak</span></div>
       <div class="stat"><b>${s.read_this_week || 0}</b><span>this week</span></div>
       <div class="stat"><b>${s.saved || 0}</b><span>to read</span></div></div>
@@ -618,8 +680,34 @@ function renderProgress(pool) {
       <div class="track-bar"><i style="width:${Math.min(100, (t.read / t.total) * 100)}%"></i></div></div>`).join("")}</div>
     ${suggestion ? `<div class="next"><div class="k">${saved[0] ? "Next on your reading list" : "Suggested · " + esc(weakest.label)}</div>
       <a href="${esc(safeUrl(suggestion.url))}" target="_blank" rel="noopener">${esc(suggestion.title)}</a>
-      <div class="m">${esc(suggestion.source_name)}</div></div>` : ""}`;
+      <div class="m">${esc(suggestion.source_name)}</div></div>` : ""}
+    ${STATIC ? `<div class="io"><button data-io="export">Export progress</button><button data-io="import">Import</button></div>` : ""}`;
 }
+// Export / import (static mode): move your progress between browsers or keep a backup.
+$("progress").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-io]");
+  if (!b) return;
+  if (b.dataset.io === "export") {
+    const blob = new Blob([JSON.stringify({ version: 1, posts: store.get(PROGRESS_KEY, {}) }, null, 1)], { type: "application/json" });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `ai-wire-progress-${todayStr()}.json` });
+    a.click(); URL.revokeObjectURL(a.href);
+    return;
+  }
+  const input = Object.assign(document.createElement("input"), { type: "file", accept: "application/json,.json" });
+  input.onchange = async () => {
+    try {
+      const incoming = JSON.parse(await input.files[0].text()).posts || {};
+      const posts = store.get(PROGRESS_KEY, {});
+      for (const [url, entry] of Object.entries(incoming)) {
+        if (!/^https?:\/\//.test(url) || typeof entry !== "object") continue;
+        posts[url] = { ...posts[url], ...entry };  // merge: imported entries win
+      }
+      store.set(PROGRESS_KEY, posts);
+      prog = localProgress(); renderFeed(); renderLearn();
+    } catch { alert("That file doesn't look like an AI Wire progress export."); }
+  };
+  input.click();
+});
 $("tracks").addEventListener("click", (e) => { const b = e.target.closest("[data-track]"); if (b) { track = b.dataset.track; store.set("aiwire.track", track); renderLearn(); } });
 $("ltabs").addEventListener("click", (e) => { const b = e.target.closest("[data-ltab]"); if (b) { ltab = b.dataset.ltab; store.set("aiwire.ltab", ltab); renderLearn(); } });
 
@@ -638,8 +726,8 @@ $("views").addEventListener("click", (e) => { const b = e.target.closest("[data-
 function renderAll() { renderFilters(); renderFeed(); renderHN(); renderStatus(); renderLearn(); }
 async function load(refresh = false) {
   const [news, p] = await Promise.all([
-    fetch(refresh ? "/api/refresh" : "/api/news", { method: refresh ? "POST" : "GET" }).then((r) => r.json()),
-    fetch("/api/progress").then((r) => r.json()),
+    refresh ? fetch("api/refresh", { method: "POST" }).then((r) => r.json()) : getJSON(URLS.news),
+    STATIC ? localProgress() : getJSON("api/progress"),
   ]);
   data = news; prog = p;
   if (org !== "all" && !data.posts.some((x) => x.org === org)) org = "all";
@@ -656,8 +744,9 @@ $("theme").addEventListener("click", () => {
 });
 document.documentElement.dataset.theme = store.get("aiwire.theme", "dark");
 
+if (STATIC) document.body.classList.add("static");  // no Refresh button: GitHub updates the data every 30 minutes
 setView(view);
-load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't reach the server.</div>`; });
+load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't load the news. Try reloading the page.</div>`; });
 setInterval(() => load().then(() => view === "week" && loadWeek()).catch(() => {}), 5 * 60 * 1000);
 </script>
 </body>
