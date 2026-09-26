@@ -19,9 +19,42 @@ def local_day(iso: str) -> str:
     return datetime.fromisoformat(iso).astimezone().date().isoformat()
 
 
+def prune() -> int:
+    """Re-check every saved day against the current rules (sources.py, topics.py).
+
+    Drops posts from removed sources and posts that no longer count as on-topic,
+    so changing the rules also cleans up the archive. Returns posts removed.
+    """
+    from sources import SOURCES
+    from topics import classify, is_focused
+
+    by_id = {s["id"]: s for s in SOURCES}
+    removed = 0
+    for path in EDITIONS_DIR.glob("*.json"):
+        edition = load(path.stem)
+        if not edition:
+            continue
+        keep = []
+        for p in edition["posts"]:
+            src = by_id.get(p.get("source"))
+            if src:
+                p["group"] = src["group"]
+                classify(p, src)
+                if is_focused(p):
+                    keep.append(p)
+        removed += len(edition["posts"]) - len(keep)
+        if not keep:
+            path.unlink()
+        elif len(keep) != len(edition["posts"]):
+            edition["posts"] = keep
+            path.write_text(json.dumps(edition, indent=1, ensure_ascii=False))
+    return removed
+
+
 def update(data: dict) -> int:
     """File the latest scrape into daily editions. Returns how many editions changed."""
     EDITIONS_DIR.mkdir(parents=True, exist_ok=True)
+    prune()
     oldest = (date.today() - timedelta(days=BACKFILL_DAYS)).isoformat()
 
     by_day: dict[str, list[dict]] = {}

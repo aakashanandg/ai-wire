@@ -1,38 +1,45 @@
-"""Tag posts with learning topics, and tell deep dives apart from announcements.
+"""Decide what AI Wire is about: system design and AI system design.
 
-Plain keyword rules: fast, free, predictable, and easy to tune. A post can have
-several topics. Edit the word lists to change what lands where.
+Every post is tagged with the tracks it covers and marked as a deep dive or an
+announcement. Only focused posts are kept (see is_focused): technical write-ups
+about how systems are built, not launches, company news or model papers.
+
+Plain keyword rules: fast, free, predictable, and easy to tune. Edit the word
+lists to change what lands where.
 """
 
 import re
 
-# topic id -> (label, keywords). Keywords match whole words, case-insensitively;
+# track id -> (label, keywords). Keywords match whole words, case-insensitively;
 # a trailing * matches any ending ("scal*" matches scale, scaling, scalable).
 TOPICS = {
-    "agents": ("AI agents", [
-        "agent*", "agentic", "tool use", "tool calling", "function calling", "mcp", "model context protocol",
-        "harness*", "rag", "retrieval", "context engineering", "context window", "prompt*", "eval*",
-        "coding assistant*", "claude code", "codex", "copilot", "langgraph", "orchestrat*", "workflow*",
-        "memory", "guardrail*", "sandbox*", "computer use", "browser use", "autonomous",
-    ]),
     "system-design": ("System design", [
-        "scal*", "distributed", "architecture", "architect*", "database*", "cach*", "queue*", "kafka",
-        "latency", "throughput", "replicat*", "shard*", "partition*", "consisten*", "microservice*",
-        "storage", "migrat*", "reliab*", "outage*", "postmortem", "post-mortem", "incident*", "load balanc*",
-        "rate limit*", "cdn", "observab*", "availability", "failover", "consensus", "event-driven",
-        "stream processing", "data pipeline*", "api design", "graphql", "grpc", "idempoten*", "backend",
-        "service mesh", "search index*", "real-time", "multi-region", "monolith",
+        # architecture and data
+        "system design", "architecture", "architect*", "distributed", "database*", "postgres*", "mysql",
+        "sql", "nosql", "storage", "cach*", "cdn", "queue*", "kafka", "stream processing", "event-driven",
+        "pub/sub", "data pipeline*", "replicat*", "shard*", "partition*", "eventual consistency",
+        "strong consistency", "consistency model*", "consensus", "raft",
+        "paxos", "transaction*", "index*", "search index*", "schema*", "migrat*", "microservice*",
+        "monolith", "api design", "graphql", "grpc", "idempoten*", "backend", "service mesh", "multi-region",
+        # scale, reliability, performance
+        # (No bare "scale", "reliable", "resilience", "monitoring" or "performance": they show
+        # up in every kind of post, from climate research to marketing.)
+        "scalab*", "scaling", "autoscal*", "latency", "throughput", "tail latency", "load balanc*",
+        "rate limit*", "backpressure", "reliability", "availability", "failover", "fault toleran*",
+        "outage*", "postmortem", "post-mortem", "incident*", "observab*", "distributed tracing", "slo*",
+        "kubernetes", "k8s", "cluster*", "networking", "real-time", "concurrency", "redis", "dynamodb",
     ]),
-    "infra": ("Infra & performance", [
-        "gpu*", "tpu*", "kubernetes", "k8s", "inference", "serving", "compute", "data center*", "datacenter*",
-        "performance", "optimi*", "compiler*", "kernel*", "cuda", "memory bandwidth", "cluster*", "cloud",
-        "networking", "rust", "wasm", "webassembly", "profil*", "benchmark*", "cost*", "efficien*",
-    ]),
-    "research": ("LLM research", [
-        "training", "pretrain*", "fine-tun*", "finetun*", "reinforcement learning", "rlhf", "rl",
-        "alignment", "interpretab*", "reasoning", "transformer*", "diffusion", "embedding*", "multimodal",
-        "distillation", "quantiz*", "tokeniz*", "scaling law*", "paper", "dataset*", "model training",
-        "world model*", "attention mechanism", "mixture of experts", "moe", "long context",
+    "ai": ("AI system design", [
+        # agents and LLM applications
+        "agent*", "agentic", "multi-agent", "tool use", "tool calling", "function calling", "mcp",
+        "model context protocol", "harness*", "rag", "retrieval", "retrieval-augmented", "vector*",
+        "embedding*", "context engineering", "context window", "prompt*", "eval*", "guardrail*",
+        "sandbox*", "computer use", "browser use", "coding agent*", "claude code", "codex", "copilot",
+        "langgraph", "structured output*", "llm*", "llmops", "ai engineering", "ai application*",
+        "ai system*", "ai infrastructure", "orchestrat*",
+        # serving and inference
+        "inference", "serving", "model serving", "gpu*", "tpu*", "kv cache", "prompt caching",
+        "quantiz*", "fine-tun*", "finetun*", "batching", "speculative decoding", "token*",
     ]),
 }
 
@@ -42,8 +49,36 @@ ANNOUNCEMENT = re.compile(
     r"joins?|hiring|funding|raises|pricing|event|webinar|conference|keynote|summit|award|expands?|"
     r"academy|program|remarks|policy|election|government|boosts? sales|saves?|widens?|access to|extends?|"
     r"helps?|meet|celebrat\w*|recap|roundup|this week|weekly|newsletter|podcast|interview|livestream|"
-    r"enroll\w*|last call|fragments|the pulse)\b"
+    r"enroll\w*|last call|fragments|the pulse|new in|what's new|release notes|changelog)\b"
     r"|^\[AINews\]",
+    re.I,
+)
+
+
+# Customer stories and product updates. Checked only on mixed blogs (labs, vendor
+# blogs): focused engineering blogs can say "cut latency 40%" and mean it.
+MARKETING = re.compile(
+    r"\bwith (codex|chatgpt|openai|gpt[\w.\u2011-]*|claude|gemini|langsmith|langgraph|deep agents|databricks)\b"
+    r"|\b\d+(\.\d+)?\s?%|\bproductivity\b|\blessons from\b|\buse cases\b|\bnow in\b|\bnow supports\b"
+    r"|\bdelivers\b|\blangsmith\b|\bmanaged deep agents\b|\bhow (a|an|one) \w+ (uses|use)\b"
+    r"|\b(enterprises?|employees|leader|gartner|investments?|community|letter|governor|brings|comes? to|named|"
+    r"unlocks|transforming|for every|everything|generally available|roi|retention|is now the|age of|era|"
+    r"unveil\w*|trusted ai|responsible ai|playbook|workspace)\b",
+    re.I,
+)
+# Company-as-subject headlines: "Polimill builds…", "How Endava is redesigning…",
+# "How engineers at Nextdoor use…". Case-sensitive; "How we built…" is kept.
+CUSTOMER = re.compile(
+    r"^(?:How )?(?!We\b|I\b|To\b|Do\b|AI\b)[A-Z][\w&.'\u2019-]*(?: [A-Z][\w&.'\u2019-]*)* "
+    r"(?:brings|automates|builds|uses|used|is redesigning|rebuilt|named|widens|cuts?)\b"
+    r"|^How (?:engineers|teams|developers) at\b"
+)
+
+# News, politics and security incidents: common on Hacker News, not design lessons.
+NEWS = re.compile(
+    r"\b(court|judge|lawsuit|sues?|ftc|feds|government|congress|senate|regulat\w*|bans?|laws?|policy|"
+    r"election|military|pentagon|nsa|hack(s|ed)?|layoffs?|stocks?|ipo|funding|acquir\w*|ceo|critics|"
+    r"medicare|citizenship|immigration|drones?|criminal\w*|best llm|price war)\b",
     re.I,
 )
 
@@ -58,23 +93,28 @@ LABELS = {tid: label for tid, (label, _) in TOPICS.items()}
 
 
 def classify(post: dict, source: dict) -> None:
-    """Add `topics` (list of topic ids) and `deep_dive` (bool) to a post, in place."""
+    """Add `topics` (track ids, strongest first) and `deep_dive` (bool) to a post, in place."""
     text = f"{post['title']} {post.get('summary', '')} {' '.join(post.get('tags', []))}"
     # Titles count double: a keyword in the title says more than one in the summary.
     scores = {tid: 2 * len(p.findall(post["title"])) + len(p.findall(text)) for tid, p in PATTERNS.items()}
-    topics = [tid for tid, s in sorted(scores.items(), key=lambda kv: -kv[1]) if s >= 2]
-    # "research" words like "model" are everywhere in AI news; only keep it as a
-    # second topic when it is clearly the main subject.
-    if "research" in topics and topics[0] != "research":
-        topics.remove("research")
-    post["topics"] = topics[:2]
+    post["topics"] = [tid for tid, s in sorted(scores.items(), key=lambda kv: -kv[1]) if s >= 2]
 
+    if source["group"] == "community" and NEWS.search(post["title"]):
+        post["topics"] = []  # news, not a design discussion
     if source["group"] == "community" or ANNOUNCEMENT.search(post["title"]):
         post["deep_dive"] = False
-    elif "deep_dive" in source:
-        post["deep_dive"] = source["deep_dive"]
-    elif source["group"] == "lab":
-        # Lab blogs mix launches with technical posts: need a topic word in the title itself.
-        post["deep_dive"] = any(PATTERNS[t].search(post["title"]) for t in topics)
-    else:
+    elif not source.get("focused") and (MARKETING.search(post["title"]) or CUSTOMER.search(post["title"])):
+        post["deep_dive"] = False
+    elif source.get("focused"):
         post["deep_dive"] = True
+    else:
+        # Mixed blogs (labs, big company blogs) also post news and marketing:
+        # require a track keyword in the title itself.
+        post["deep_dive"] = any(PATTERNS[t].search(post["title"]) for t in post["topics"])
+
+
+def is_focused(post: dict) -> bool:
+    """Keep only system design and AI system design: deep dives, or HN stories on those topics."""
+    if not post.get("topics"):
+        return False
+    return post.get("deep_dive", False) or post.get("group") == "community"

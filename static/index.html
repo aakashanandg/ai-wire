@@ -77,8 +77,6 @@ body[data-view="learn"] .live-only, body[data-view="learn"] .week-only { display
 .chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
 .chip.group { font-weight: 600; font-size: 13px; }
 .chip.err { text-decoration: line-through; opacity: .6; }
-.toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); flex: none; cursor: pointer; margin-left: auto; padding-left: 12px; }
-.toggle input { accent-color: var(--accent); }
 
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
 .new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; letter-spacing: .02em; }
@@ -102,6 +100,7 @@ h2.day:first-child { margin-top: 8px; }
 .is-read .title { color: var(--faint); }
 
 /* Layout switch (Cards / List) */
+.chips .seg { margin-left: auto; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; flex: none; background: var(--surface); }
 .seg button { border: 0; background: none; border-radius: 6px; padding: 3px 10px; font-size: 12.5px; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 500; }
@@ -259,7 +258,7 @@ body.static #refresh { display: none; }
   .tl-body::before { left: -22px; top: -30px; }
   .wk-nav .lbl { display: none; } .top-item .t { font-size: 17px; }
   .track { min-width: 0; flex: 1 1 40%; }
-  .toggle { margin-left: 0; }
+  .chips .seg { margin-left: 8px; }
 }
 </style>
 </head>
@@ -298,7 +297,7 @@ body.static #refresh { display: none; }
     <aside>
       <div class="panel">
         <h3><span class="y">Y</span> Latest on Hacker News</h3>
-        <p class="sub">Newest AI stories with 40+ points</p>
+        <p class="sub">System design &amp; AI engineering stories, 40+ points</p>
         <div id="hn"></div>
       </div>
     </aside>
@@ -308,7 +307,7 @@ body.static #refresh { display: none; }
     <section>
       <div class="kicker">AI Wire · Learn</div>
       <h1 class="big">Level up, one post at a time</h1>
-      <p class="lede">Technical deep dives from engineering teams, AI labs and researchers, sorted by skill. Save what you want to read and mark what you've read.</p>
+      <p class="lede">Deep dives on system design and AI system design from engineering teams, AI labs and engineers who build at scale. Save what you want to read and mark what you've read.</p>
       <div class="tracks" id="tracks"></div>
       <div class="tabs" id="ltabs" role="group" aria-label="Reading status"></div>
       <div id="learn-list" aria-live="polite"></div>
@@ -331,9 +330,12 @@ const ORG_COLORS = {
   "Databricks": "#ff3621", "LangChain": "#2f8f83", "ByteByteGo": "#5b8def", "Pragmatic Engineer": "#c2410c",
   "Martin Fowler": "#8b8b8b", "Simon Willison": "#a78bfa", "Latent Space": "#14b8a6",
   "Eugene Yan": "#f59e0b", "Lilian Weng": "#ec4899", "Hacker News": "#ff6600",
+  "InfoQ": "#2f6fdb", "System Design Newsletter": "#d4a017", "System Design Codex": "#7c9a3c",
+  "Arpit Bhayani": "#c0392b", "Werner Vogels": "#ff9900", "Marc Brooker": "#5a8fbf",
+  "Murat Demirbas": "#8e6bbf", "Hamel Husain": "#e0763a",
 };
-const GROUPS = [["all", "Everything"], ["lab", "AI labs"], ["engineering", "Engineering blogs"], ["learning", "Newsletters & researchers"]];
-const TRACKS = [["all", "All topics"], ["agents", "AI agents"], ["system-design", "System design"], ["infra", "Infra & performance"], ["research", "LLM research"], ["general", "General engineering"]];
+const GROUPS = [["all", "Everything"], ["lab", "AI labs"], ["engineering", "Engineering blogs"], ["learning", "Newsletters & engineers"]];
+const TRACKS = [["all", "Both tracks"], ["system-design", "System design"], ["ai", "AI system design"]];
 const TOPIC_LABEL = Object.fromEntries(TRACKS);
 
 const store = {
@@ -347,7 +349,9 @@ const newestFirst = (a, b) => when(b) - when(a) || new Date(b.first_seen) - new 
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
 const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const color = (org) => ORG_COLORS[org] || "var(--faint)";
-const topicsOf = (p) => p.topics?.length ? p.topics : ["general"];
+const KNOWN = new Set(["system-design", "ai"]);
+// Tracks a post belongs to (entries saved under older topic names fall back to system design).
+const topicsOf = (p) => { const t = (p.topics || []).filter((x) => KNOWN.has(x)); return t.length ? t : ["system-design"]; };
 
 // Two modes: the local server (python server.py) or static files built by build.py
 // for GitHub Pages. In static mode there's no server to write to, so reading
@@ -362,7 +366,6 @@ let data = { posts: [], sources: [] };
 let prog = { posts: {}, stats: {} };
 let group = store.get("aiwire.group", "all");
 let org = store.get("aiwire.org", "all");
-let deepOnly = store.get("aiwire.deepOnly", false);
 let layout = store.get("aiwire.layout", "cards");
 const lastVisit = store.get("ainews.lastVisit", null);
 store.set("ainews.lastVisit", new Date().toISOString());
@@ -395,8 +398,7 @@ function actions(p) {
     <button class="act read" data-act="read" data-url="${esc(p.url)}" aria-pressed="${!!e.read_at}" title="${e.read_at ? "Mark as unread" : "Mark as read"}" aria-label="Mark as read">${ICON_READ}</button></div>`;
 }
 function tags(p) {
-  if (!p.deep_dive) return "";
-  return `<span class="tag dd">Deep dive</span>` + topicsOf(p).map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("");
+  return topicsOf(p).map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("");
 }
 function postCard(p) {
   const d = when(p), e = prog.posts[p.url] || {};
@@ -460,7 +462,6 @@ function renderFilters() {
   const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
   $("groups").innerHTML = GROUPS.map(([k, label]) =>
     `<button class="chip group" data-group="${k}" aria-pressed="${group === k}">${label} <b>${posts.filter((p) => k === "all" || p.group === k).length}</b></button>`).join("") +
-    `<label class="toggle"><input type="checkbox" id="deep" ${deepOnly ? "checked" : ""}> Deep dives only</label>` +
     `<div class="seg" role="group" aria-label="Layout">${[["cards", "Cards"], ["list", "List"]].map(([k, l]) =>
       `<button data-layout="${k}" aria-pressed="${layout === k}">${l}</button>`).join("")}</div>`;
   const inGroup = posts.filter((p) => group === "all" || p.group === group);
@@ -472,7 +473,7 @@ function renderFilters() {
 function renderFeed() {
   const q = $("q").value.trim().toLowerCase();
   const posts = feedPosts()
-    .filter((p) => (group === "all" || p.group === group) && (org === "all" || p.org === org) && (!deepOnly || p.deep_dive))
+    .filter((p) => (group === "all" || p.group === group) && (org === "all" || p.org === org))
     .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
     .sort(newestFirst);
   if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`; return; }
@@ -487,21 +488,17 @@ function renderFeed() {
 }
 // Card layout: one section per category, newest first, 6 cards until expanded.
 const CATEGORIES = [
-  ["agents", "AI agents", "Agents, tool use, RAG, evals and coding assistants"],
-  ["system-design", "System design", "Architecture, databases, scaling and reliability"],
-  ["infra", "Infra & performance", "GPUs, inference, performance and cost"],
-  ["research", "LLM research", "Training, alignment, reasoning and new models"],
-  ["general", "General engineering", "Other technical write-ups from engineering teams"],
-  ["news", "Announcements & launches", "Product launches, partnerships and company news"],
+  ["system-design", "System design", "Architecture, databases, scaling, reliability and performance"],
+  ["ai", "AI system design", "Agents, RAG, evals, LLM apps, inference and serving"],
 ];
 const CARDS_PER_SECTION = 6;
 const expanded = new Set();
-// Each post goes in exactly one section: its main topic, or "news" if it isn't a deep dive.
-const categoryOf = (p) => (p.deep_dive ? topicsOf(p)[0] : "news");
+// Each post goes in exactly one section: its main track.
+const categoryOf = (p) => topicsOf(p)[0];
 
 function card(p) {
   const d = when(p), e = prog.posts[p.url] || {};
-  const extra = p.deep_dive ? topicsOf(p).slice(1) : [];
+  const extra = topicsOf(p).slice(1);
   return `<article class="card${e.read_at ? " is-read" : ""}" style="--c:${color(p.org)}">
     <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
       <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}</div>
@@ -561,7 +558,6 @@ $("groups").addEventListener("click", (e) => {
   group = b.dataset.group; org = "all"; store.set("aiwire.group", group); store.set("aiwire.org", org);
   renderFilters(); renderFeed();
 });
-$("groups").addEventListener("change", (e) => { if (e.target.id === "deep") { deepOnly = e.target.checked; store.set("aiwire.deepOnly", deepOnly); renderFeed(); } });
 $("orgs").addEventListener("click", (e) => { const b = e.target.closest("[data-org]"); if (b) { org = b.dataset.org; store.set("aiwire.org", org); renderFilters(); renderFeed(); } });
 $("q").addEventListener("input", () => { renderFeed(); renderHN(); });
 
@@ -598,7 +594,7 @@ async function loadWeek() {
       <span class="range">${range}</span>
       <button data-week="${w.newer || ""}" ${w.newer ? "" : "disabled"} aria-label="Next week"><span class="lbl">Next week</span> →</button></nav>
     <div class="kicker">AI Wire · ${w.newer ? "Week of " + fmtDay(w.start, { month: "long", day: "numeric" }) : "This week"}</div>
-    <h1 class="big">The week in AI</h1>
+    <h1 class="big">The week in system design &amp; AI</h1>
     <p class="lede"><b>${w.counts.labs} posts</b> from the blogs and <b>${w.counts.hn} stories</b> on Hacker News, ${range}${w.newer ? "" : ", so far"}.</p>
     <div class="strip">${[...w.days].reverse().map((d) => `
       <button data-jump="${d.date}" class="${d.date === todayStr() ? "today" : ""}" title="${d.counts.labs} blog posts, ${d.counts.hn} HN stories">
@@ -616,7 +612,7 @@ async function loadWeek() {
     return `<div class="tl-day${quiet ? " quiet" : ""}" id="day-${d.date}">
       <div class="tl-when"><div class="wd">${d.date === todayStr() ? "Today" : fmtDay(d.date, { weekday: "long" })}</div><div class="dt">${fmtDay(d.date, { month: "long", day: "numeric" })}</div></div>
       <div class="tl-body">` + posts.map((p) => `<a class="tl-item" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
-        <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span>${p.deep_dive ? '<span class="tag dd">Deep dive</span>' : ""}</div>
+        <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span>${tags(p)}</div>
         <h3 class="title">${esc(p.title)}</h3></a>`).join("") +
       (hn.length ? `<div class="tl-hn"><div class="h">Top on Hacker News</div>${hn.map((p) => `<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><span class="p">▲ ${p.points}</span><span>${esc(p.title)}</span></a>`).join("")}</div>` : "") +
       (quiet ? `<div class="tl-quiet">${d.date === todayStr() ? "Nothing yet today." : "A quiet day."}</div>` : "") + `</div></div>`;
@@ -637,7 +633,7 @@ let ltab = store.get("aiwire.ltab", "toread");
 // Everything learnable: deep dives in the current data, plus anything you saved
 // or read earlier that has since dropped off the feeds.
 function learnPool() {
-  const map = new Map(data.posts.filter((p) => p.deep_dive).map((p) => [p.url, p]));
+  const map = new Map(feedPosts().map((p) => [p.url, p]));
   for (const [url, e] of Object.entries(prog.posts)) if (!map.has(url)) map.set(url, e);
   return [...map.values()];
 }
@@ -668,7 +664,11 @@ function renderLearn() {
 }
 function renderProgress(pool) {
   const s = prog.stats || {};
-  const tracks = TRACKS.slice(1).map(([k, label]) => ({ k, label, total: pool.filter((p) => topicsOf(p).includes(k)).length, read: s.by_topic?.[k] || 0 })).filter((t) => t.total);
+  // Count with each post's current tags, so the bars match the track buttons even after the rules change.
+  const tracks = TRACKS.slice(1).map(([k, label]) => {
+    const ps = pool.filter((p) => topicsOf(p).includes(k));
+    return { k, label, total: ps.length, read: ps.filter((p) => prog.posts[p.url]?.read_at).length };
+  }).filter((t) => t.total);
   const saved = Object.values(prog.posts).filter((e) => e.saved_at && !e.read_at).sort((a, b) => new Date(a.saved_at) - new Date(b.saved_at));
   const weakest = [...tracks].sort((a, b) => a.read / a.total - b.read / b.total)[0];
   const suggestion = saved[0] || (weakest && pool.filter((p) => topicsOf(p).includes(weakest.k) && !prog.posts[p.url]?.read_at).sort(newestFirst)[0]);

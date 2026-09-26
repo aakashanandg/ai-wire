@@ -19,7 +19,7 @@ from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from dateutil import parser as dateparser
 
 from sources import SOURCES
-from topics import classify
+from topics import classify, is_focused
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -205,13 +205,15 @@ def scrape_source(src: dict) -> tuple[dict, list[dict]]:
         status.update(ok=False, error=f"{type(e).__name__}: {e}"[:200])
         return status, []
 
+    fetched = len(posts)
     cutoff = time.time() - MAX_AGE_DAYS * 86400
     posts = [p for p in posts if not p["date"] or dateparser.parse(p["date"]).timestamp() > cutoff]
-    posts = posts[:MAX_PER_SOURCE]
     for p in posts:
         p.update(source=src["id"], source_name=src["name"], org=src["org"], group=src["group"])
         classify(p, src)
-    status.update(count=len(posts), undated=sum(1 for p in posts if not p["date"]),
+    # Keep only system design and AI system design (see topics.is_focused).
+    posts = [p for p in posts if is_focused(p)][:MAX_PER_SOURCE]
+    status.update(fetched=fetched, count=len(posts), undated=sum(1 for p in posts if not p["date"]),
                   seconds=round(time.time() - start, 1))
     return status, posts
 
@@ -226,11 +228,17 @@ def scrape_all(previous: dict | None = None) -> dict:
 
     # Feeds sometimes fail or come back empty for a moment. Keep that source's
     # previous posts rather than making them vanish until the next refresh.
+    # (Re-tag the old posts with today's rules, so a rule change applies to them too.)
+    by_id = {s["id"]: s for s in SOURCES}
     old_by_source: dict[str, list[dict]] = {}
     for p in (previous or {}).get("posts", []):
-        old_by_source.setdefault(p["source"], []).append(p)
+        if p.get("source") in by_id:
+            classify(p, by_id[p["source"]])
+            if is_focused(p):
+                old_by_source.setdefault(p["source"], []).append(p)
     for status, source_posts in results:
-        if not source_posts and old_by_source.get(status["id"]):
+        fetch_failed = not status["ok"] or status.get("fetched") == 0
+        if fetch_failed and old_by_source.get(status["id"]):
             source_posts.extend(old_by_source[status["id"]])
             status.update(stale=True, count=len(source_posts))
 
