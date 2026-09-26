@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Wire</title>
+<meta name="description" content="System design and AI system design deep dives from company engineering blogs, updated every 30 minutes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
 /* Palette after tdd.cat (The Daily Diff): newsprint cream + oxblood, or warm charcoal + amber. */
 :root {
   --bg: #f8f4e8; --surface: #fffdf6; --surface-2: #efe8d4;
   --text: #1b1a17; --muted: #45423a; --faint: #7c7563;
   --line: rgba(32, 30, 25, .14); --rule: #201e19;
-  --accent: #8a1f11; --accent-soft: rgba(138, 31, 17, .08); --on-accent: #f8f4e8;
-  --good: #3d6b35;
+  --accent: #8a1f11; --accent-soft: rgba(138, 31, 17, .08);
   --serif: "Source Serif 4", Georgia, serif;
   --sans: "DM Sans", system-ui, -apple-system, sans-serif;
 }
@@ -23,16 +23,14 @@
     --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
     --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
     --line: rgba(217, 208, 189, .12); --rule: #b0a790;
-    --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14); --on-accent: #17150f;
-    --good: #9cbf7a;
+    --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14);
   }
 }
 :root[data-theme="dark"] {
   --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
   --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
   --line: rgba(217, 208, 189, .12); --rule: #b0a790;
-  --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14); --on-accent: #17150f;
-  --good: #9cbf7a;
+  --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14);
 }
 
 * { box-sizing: border-box; }
@@ -43,222 +41,65 @@ button { font: inherit; color: inherit; cursor: pointer; }
 ::selection { background: var(--accent-soft); }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-/* Header: a newspaper masthead with a double rule underneath */
-header { background: var(--bg); position: sticky; top: 0; z-index: 10; border-bottom: 3px double var(--rule); }
-.bar { display: flex; align-items: center; gap: 14px; height: 64px; }
-.logo { font: 700 27px/1 var(--serif); letter-spacing: -0.015em; white-space: nowrap; }
+/* Masthead */
+header { border-bottom: 3px double var(--rule); }
+.bar { display: flex; align-items: center; gap: 14px; padding: 22px 0 16px; }
+.logo { font: 700 30px/1 var(--serif); letter-spacing: -0.015em; white-space: nowrap; }
 .logo span { color: var(--accent); }
-.views { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 2px; background: var(--surface); }
-.views button { border: 0; background: none; border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-.views button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-.search { flex: 1; max-width: 360px; margin-left: auto; position: relative; }
-.search input { width: 100%; height: 36px; padding: 0 12px 0 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
+.tagline { color: var(--faint); font-size: 13.5px; margin-top: 6px; }
+.search { flex: 1; max-width: 340px; margin-left: auto; position: relative; }
+.search input { width: 100%; height: 38px; padding: 0 12px 0 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
 .search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-.search svg { position: absolute; left: 11px; top: 10px; color: var(--faint); }
-.icon-btn { height: 36px; min-width: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.search svg { position: absolute; left: 11px; top: 11px; color: var(--faint); }
+.icon-btn { height: 38px; width: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--muted); flex: none; }
 .icon-btn:hover { color: var(--text); }
-#refresh { margin-left: auto; }
-body[data-view="live"] #refresh { margin-left: 0; }  /* the search box takes the free space instead */
-.spin svg { animation: spin .9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
-body[data-view="live"] .week-only, body[data-view="live"] .learn-only,
-body[data-view="week"] .live-only, body[data-view="week"] .learn-only,
-body[data-view="learn"] .live-only, body[data-view="learn"] .week-only { display: none !important; }
-
-/* Chips */
-.filters { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
-.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; align-items: center; }
+/* Source filter */
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 0 14px; }
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
 .chip b { font-weight: 500; color: var(--faint); font-size: 11.5px; }
 .chip:hover { color: var(--text); }
 .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
 .chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
-.chip.group { font-weight: 600; font-size: 13px; }
 .chip.err { text-decoration: line-through; opacity: .6; }
-
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
-.new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; letter-spacing: .02em; }
-.tag { font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
-.tag.dd { color: var(--accent); border-color: transparent; background: var(--accent-soft); }
 
-/* Feed */
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 48px; padding: 4px 0 64px; }
-h2.day { font: 600 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .12em; color: var(--faint); margin: 28px 0 4px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
-h2.day:first-child { margin-top: 8px; }
-.post { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.meta { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; flex-wrap: wrap; }
-.title { font: 600 20px/1.3 var(--serif); margin: 0; letter-spacing: -0.005em; }
-.post a:hover .title { color: var(--accent); }
-.summary { color: var(--muted); font-size: 14px; margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.acts { display: flex; flex-direction: column; gap: 4px; padding-top: 2px; }
-.act { width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--faint); display: grid; place-items: center; }
-.act:hover { color: var(--text); border-color: var(--line); background: var(--surface); }
-.act[aria-pressed="true"] { color: var(--accent); }
-.act.read[aria-pressed="true"] { color: var(--good); }
-.is-read .title { color: var(--faint); }
-
-/* Layout switch (Cards / List) */
-.chips .seg { margin-left: auto; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; flex: none; background: var(--surface); }
-.seg button { border: 0; background: none; border-radius: 6px; padding: 3px 10px; font-size: 12.5px; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 500; }
-
-/* Card sections */
-.cat-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 4px; }
-.cat-nav a { font-size: 12.5px; color: var(--muted); border-bottom: 1px dotted var(--faint); padding: 2px 0; margin-right: 12px; }
+/* Sections of cards */
+main { padding-bottom: 56px; }
+.cat-nav { display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 16px 0 0; font-size: 13px; }
+.cat-nav a { color: var(--muted); border-bottom: 1px dotted var(--faint); }
 .cat-nav a:hover { color: var(--accent); border-color: var(--accent); }
 .cat-nav a b { font-weight: 500; color: var(--faint); margin-left: 3px; }
-.cat { margin-top: 30px; scroll-margin-top: 160px; }
+.cat { margin-top: 30px; scroll-margin-top: 16px; }
 .cat-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
-.cat-head h2 { margin: 0; font: 700 23px/1.2 var(--serif); letter-spacing: -0.01em; }
-.cat-head h2 .n { font: 500 13px var(--sans); color: var(--faint); margin-left: 4px; letter-spacing: 0; }
+.cat-head h2 { margin: 0; font: 700 24px/1.2 var(--serif); letter-spacing: -0.01em; }
+.cat-head h2 .n { font: 500 13px var(--sans); color: var(--faint); margin-left: 4px; }
 .cat-head p { margin: 3px 0 0; color: var(--faint); font-size: 13px; }
 .more { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
 .more:hover { color: var(--accent); border-color: var(--accent); }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; transition: border-color .15s, transform .15s; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; transition: border-color .15s, transform .15s; }
 .card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--c); opacity: .85; }
 .card:hover { border-color: var(--faint); transform: translateY(-1px); }
-.card .meta { margin: 0; font-size: 12px; }
-.card .title { font-size: 17px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.card a:hover .title { color: var(--accent); }
-.card .summary { font-size: 13.5px; -webkit-line-clamp: 3; margin: 0; }
-.card-foot { margin-top: auto; padding-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; }
-.card .acts { flex-direction: row; padding: 0; }
-.card.is-read { opacity: .62; }
-
-aside { align-self: start; position: sticky; top: 150px; }
-.learn aside { top: 90px; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 8px; }
-.panel h3 { margin: 0 0 2px; font: 600 17px var(--serif); display: flex; align-items: center; gap: 8px; }
-.panel p.sub { margin: 0 0 8px; color: var(--faint); font-size: 12.5px; }
-.y { background: var(--accent); color: var(--on-accent); width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font: 600 11px var(--sans); }
-.hn { display: grid; grid-template-columns: 42px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-.pts { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); font-size: 13.5px; text-align: right; }
-.hn a.t { font-size: 14px; line-height: 1.35; font-weight: 500; display: block; }
-.hn a.t:hover { color: var(--accent); }
-.hn .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
-.hn .m a:hover { color: var(--text); text-decoration: underline; }
+.meta { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; }
+.title { font: 600 17.5px/1.3 var(--serif); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card:hover .title { color: var(--accent); }
+.summary { color: var(--muted); font-size: 13.5px; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tag { margin-top: auto; align-self: flex-start; font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
 .empty { padding: 48px 0; color: var(--muted); text-align: center; }
 footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
 footer .bad { color: var(--accent); }
 
-/* Week timeline */
-.week { max-width: 860px; margin: 0 auto; padding: 32px 0 72px; }
-.wk-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 32px; }
-.wk-nav button { white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
-.wk-nav button:hover:not(:disabled) { color: var(--text); }
-.wk-nav button:disabled { opacity: .35; cursor: default; }
-.wk-nav .range { font-size: 13px; color: var(--muted); }
-.kicker { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-.big { font: 700 46px/1.08 var(--serif); letter-spacing: -0.02em; margin: 10px 0 12px; }
-.lede { font-size: 17px; color: var(--muted); margin: 0; }
-.lede b { color: var(--text); font-weight: 600; }
-.strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 32px 0 8px; }
-.strip button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); }
-.strip button:hover, .strip button.today { border-color: var(--accent); }
-.strip .wd { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-.strip .dn { font: 700 22px/1 var(--serif); color: var(--text); }
-.strip .bars { height: 56px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 3px; }
-.strip .bars i { width: 12px; border-radius: 3px 3px 0 0; min-height: 2px; }
-.strip .bars .l { background: var(--accent); }
-.strip .bars .h { background: var(--faint); }
-.strip .ct { font-size: 12px; font-variant-numeric: tabular-nums; }
-.legend { display: flex; gap: 16px; font-size: 12px; color: var(--faint); justify-content: flex-end; }
-.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-.sec { margin-top: 44px; }
-.sec > h2 { font: 600 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
-.top-item { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
-.top-item .rank { font: 700 20px var(--serif); color: var(--faint); }
-.top-item .t { font: 600 19px/1.3 var(--serif); }
-.top-item .t:hover { color: var(--accent); }
-.top-item .pts { font-size: 13px; white-space: nowrap; }
-.top-item .m { grid-column: 2 / 4; font-size: 12.5px; color: var(--faint); }
-.top-item .m a:hover { color: var(--text); text-decoration: underline; }
-.tl-day { display: grid; grid-template-columns: 120px 1fr; gap: 0 28px; position: relative; padding-top: 28px; scroll-margin-top: 90px; }
-.tl-day::before { content: ""; position: absolute; left: 136px; top: 0; bottom: 0; width: 1px; background: var(--line); }
-.tl-when { position: sticky; top: 88px; align-self: start; text-align: right; }
-.tl-when .wd { font: 700 17px/1.2 var(--serif); }
-.tl-when .dt { font-size: 12.5px; color: var(--faint); }
-.tl-body { position: relative; padding-bottom: 8px; }
-.tl-body::before { content: ""; position: absolute; left: -19px; top: 7px; width: 11px; height: 11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
-.tl-day.quiet .tl-body::before { border-color: var(--faint); }
-.tl-item { display: block; padding: 0 0 14px; }
-.tl-item .title { font-size: 18px; }
-.tl-item:hover .title { color: var(--accent); }
-.tl-item .meta { margin: 0 0 3px; }
-.tl-hn { margin: 4px 0 18px; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
-.tl-hn .h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin-bottom: 4px; }
-.tl-hn a { display: flex; gap: 10px; padding: 4px 0; font-size: 14px; }
-.tl-hn a:hover span:last-child { color: var(--accent); }
-.tl-hn .p { color: var(--accent); font-weight: 600; font-size: 12.5px; min-width: 44px; font-variant-numeric: tabular-nums; }
-.tl-quiet { color: var(--faint); font-style: italic; font-size: 14px; padding-bottom: 14px; }
-
-/* Learn */
-.learn { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; padding: 32px 0 72px; }
-.learn .big { font-size: 40px; }
-.tracks { display: flex; gap: 6px; flex-wrap: wrap; margin: 24px 0 10px; }
-.track { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
-.track .n { font-weight: 600; font-size: 14px; color: var(--text); }
-.track .c { font-size: 12px; color: var(--faint); }
-.track:hover { border-color: var(--faint); }
-.track[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-.track[aria-pressed="true"] .n { color: var(--accent); }
-.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--rule); margin-top: 18px; }
-.tabs button { background: none; border: 0; padding: 10px 0; font-size: 14px; font-weight: 500; color: var(--faint); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.tabs button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--accent); }
-.tabs button b { font-weight: 500; font-size: 12px; margin-left: 5px; color: var(--faint); }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 16px; }
-.stat { background: var(--surface-2); border-radius: 8px; padding: 10px 4px; text-align: center; }
-.stat b { display: block; font: 700 24px/1.1 var(--serif); color: var(--text); }
-.stat span { font-size: 11.5px; color: var(--faint); }
-.bars-h { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
-.bh .row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
-.bh .row b { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; }
-.bh .track-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
-.bh .track-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
-.next { border-top: 1px solid var(--line); padding: 12px 0 8px; }
-.next .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); margin-bottom: 6px; }
-.next a { font: 600 15px/1.35 var(--serif); display: block; }
-.next a:hover { color: var(--accent); }
-.next .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
-.io { display: flex; gap: 14px; border-top: 1px solid var(--line); padding: 10px 0 6px; }
-.io button { background: none; border: 0; padding: 0; font-size: 12.5px; color: var(--faint); text-decoration: underline; text-underline-offset: 3px; }
-.io button:hover { color: var(--accent); }
-body.static #refresh { display: none; }
-
-@media (max-width: 900px) {
-  .layout, .learn { grid-template-columns: 1fr; gap: 28px; }
-  aside { position: static; }
-  .layout aside { order: -1; }
-  .layout .hn:nth-child(n+6) { display: none; }
-}
 @media (max-width: 600px) {
-  header { position: static; }  /* on phones the filters would cover a quarter of the screen */
-  .cat, .tl-day { scroll-margin-top: 12px; }
-  .tl-when { top: 12px; }
   .wrap { padding: 0 16px; }
-  .bar { height: auto; flex-wrap: wrap; padding: 10px 0; gap: 6px; }
-  .logo { font-size: 20px; }
-  .views button { padding: 5px 7px; font-size: 12.5px; }
-  .search { order: 5; flex-basis: 100%; max-width: none; }
-  #refresh, body[data-view="live"] #refresh { margin-left: auto; }
-  .btn-label { display: none; }
-  .icon-btn { min-width: 32px; height: 32px; padding: 0 7px; }
-  .title { font-size: 18px; }
-  .big, .learn .big { font-size: 32px; }
-  .week, .learn { padding-top: 20px; }
-  .strip { gap: 4px; } .strip button { padding: 8px 2px 6px; } .strip .dn { font-size: 17px; }
-  .strip .bars { height: 40px; } .strip .bars i { width: 7px; }
-  .tl-day { grid-template-columns: 1fr; padding-left: 22px; }
-  .tl-day::before { left: 5px; }
-  .tl-when { position: static; text-align: left; margin-bottom: 10px; display: flex; gap: 8px; align-items: baseline; }
-  .tl-body::before { left: -22px; top: -30px; }
-  .wk-nav .lbl { display: none; } .top-item .t { font-size: 17px; }
-  .track { min-width: 0; flex: 1 1 40%; }
-  .chips .seg { margin-left: 8px; }
+  .bar { flex-wrap: wrap; padding: 16px 0 12px; }
+  .logo { font-size: 25px; }
+  .bar > div:first-child { flex: 1 1 0; min-width: 0; }  /* theme button stays beside the logo */
+  .search { order: 3; flex-basis: 100%; max-width: none; }
+  .icon-btn { margin-left: auto; }
+  .cards { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -266,77 +107,41 @@ body.static #refresh { display: none; }
 <header>
   <div class="wrap">
     <div class="bar">
-      <div class="logo">AI <span>Wire</span></div>
-      <div class="views" id="views" role="group" aria-label="View">
-        <button data-v="live">Feed</button>
-        <button data-v="week">This week</button>
-        <button data-v="learn">Learn</button>
+      <div>
+        <div class="logo">AI <span>Wire</span></div>
+        <div class="tagline">System design &amp; AI system design, from the engineering blogs</div>
       </div>
-      <label class="search live-only">
+      <label class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts">
       </label>
-      <button class="icon-btn" id="refresh" title="Fetch all sources now">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
-        <span class="btn-label">Refresh</span>
-      </button>
       <button class="icon-btn" id="theme" title="Switch light / dark" aria-label="Switch light or dark theme">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
     </div>
-    <nav class="filters live-only" aria-label="Filter posts">
-      <div class="chips" id="groups"></div>
-      <div class="chips" id="orgs"></div>
-    </nav>
+    <nav class="chips" id="sources" aria-label="Filter by engineering blog"></nav>
   </div>
 </header>
 
-<main class="wrap">
-  <div class="layout live-only">
-    <section id="feed" aria-live="polite"><div class="empty">Loading…</div></section>
-    <aside>
-      <div class="panel">
-        <h3><span class="y">Y</span> Latest on Hacker News</h3>
-        <p class="sub">System design &amp; AI engineering stories, 40+ points</p>
-        <div id="hn"></div>
-      </div>
-    </aside>
-  </div>
-  <article class="week week-only" id="week" aria-live="polite"></article>
-  <div class="learn learn-only">
-    <section>
-      <div class="kicker">AI Wire · Learn</div>
-      <h1 class="big">Level up, one post at a time</h1>
-      <p class="lede">Deep dives on system design and AI system design from engineering teams, AI labs and engineers who build at scale. Save what you want to read and mark what you've read.</p>
-      <div class="tracks" id="tracks"></div>
-      <div class="tabs" id="ltabs" role="group" aria-label="Reading status"></div>
-      <div id="learn-list" aria-live="polite"></div>
-    </section>
-    <aside>
-      <div class="panel" id="progress"></div>
-    </aside>
-  </div>
-</main>
-<footer class="wrap live-only" id="status"></footer>
+<main class="wrap" id="feed" aria-live="polite"><div class="empty">Loading…</div></main>
+<footer class="wrap" id="status"></footer>
 
 <script>
-// ---- Shared -----------------------------------------------------------------
+// Two ways to run: `python server.py` (live API) or the static build from build.py (GitHub Pages).
+const STATIC = window.AIWIRE_STATIC === true;
+const NEWS_URL = STATIC ? "data/news.json" : "api/news";
+
 const ORG_COLORS = {
-  "Anthropic": "#d97757", "OpenAI": "#10a37f", "Google": "#4285f4", "Meta": "#0866ff",
-  "Mistral": "#fa520f", "Hugging Face": "#e6a100", "NVIDIA": "#76b900", "Microsoft": "#7f5af0",
-  "Berkeley": "#3b6fb6", "Netflix": "#e50914", "Cloudflare": "#f38020", "Stripe": "#635bff",
-  "GitHub": "#8b949e", "Airbnb": "#ff5a5f", "Dropbox": "#0061fe", "Slack": "#e01e5a",
-  "Pinterest": "#e60023", "Shopify": "#95bf47", "Spotify": "#1db954", "AWS": "#ff9900",
-  "Databricks": "#ff3621", "LangChain": "#2f8f83", "ByteByteGo": "#5b8def", "Pragmatic Engineer": "#c2410c",
-  "Martin Fowler": "#8b8b8b", "Simon Willison": "#a78bfa", "Latent Space": "#14b8a6",
-  "Eugene Yan": "#f59e0b", "Lilian Weng": "#ec4899", "Hacker News": "#ff6600",
-  "InfoQ": "#2f6fdb", "System Design Newsletter": "#d4a017", "System Design Codex": "#7c9a3c",
-  "Arpit Bhayani": "#c0392b", "Werner Vogels": "#ff9900", "Marc Brooker": "#5a8fbf",
-  "Murat Demirbas": "#8e6bbf", "Hamel Husain": "#e0763a",
+  "Anthropic": "#d97757", "Meta": "#0866ff", "Netflix": "#e50914", "Cloudflare": "#f38020", "GitHub": "#8b949e",
+  "Airbnb": "#ff5a5f", "Dropbox": "#0061fe", "Slack": "#e01e5a", "Pinterest": "#e60023",
+  "Shopify": "#95bf47", "Spotify": "#1db954", "AWS": "#ff9900", "Databricks": "#ff3621",
+  "LangChain": "#2f8f83", "InfoQ": "#2f6fdb",
 };
-const GROUPS = [["all", "Everything"], ["lab", "AI labs"], ["engineering", "Engineering blogs"], ["learning", "Newsletters & engineers"]];
-const TRACKS = [["all", "Both tracks"], ["system-design", "System design"], ["ai", "AI system design"]];
-const TOPIC_LABEL = Object.fromEntries(TRACKS);
+const SECTIONS = [
+  ["system-design", "System design", "Architecture, databases, scaling, reliability and performance"],
+  ["ai", "AI system design", "Agents, RAG, evals, LLM apps, inference and serving"],
+];
+const PER_SECTION = 9;
 
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -344,29 +149,14 @@ const store = {
 };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const when = (p) => new Date(p.date || p.first_seen || p.saved_at || p.read_at);
-const newestFirst = (a, b) => when(b) - when(a) || new Date(b.first_seen) - new Date(a.first_seen);
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
-const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const when = (p) => new Date(p.date || p.first_seen);
 const color = (org) => ORG_COLORS[org] || "var(--faint)";
-const KNOWN = new Set(["system-design", "ai"]);
-// Tracks a post belongs to (entries saved under older topic names fall back to system design).
-const topicsOf = (p) => { const t = (p.topics || []).filter((x) => KNOWN.has(x)); return t.length ? t : ["system-design"]; };
-
-// Two modes: the local server (python server.py) or static files built by build.py
-// for GitHub Pages. In static mode there's no server to write to, so reading
-// progress lives in this browser instead.
-const STATIC = window.AIWIRE_STATIC === true;
-const URLS = STATIC
-  ? { news: "data/news.json", days: "data/editions/index.json", day: (d) => `data/editions/${d}.json` }
-  : { news: "api/news", days: "api/editions", day: (d) => `api/editions/${d}` };
-const getJSON = (url) => fetch(url, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(r.status + " " + url); return r.json(); });
+const sectionOf = (p) => (p.topics || []).find((t) => SECTIONS.some(([id]) => id === t)) || "system-design";
 
 let data = { posts: [], sources: [] };
-let prog = { posts: {}, stats: {} };
-let group = store.get("aiwire.group", "all");
 let org = store.get("aiwire.org", "all");
-let layout = store.get("aiwire.layout", "cards");
+const expanded = new Set();
 const lastVisit = store.get("ainews.lastVisit", null);
 store.set("ainews.lastVisit", new Date().toISOString());
 const isNew = (p) => lastVisit && p.first_seen && new Date(p.first_seen) > new Date(lastVisit);
@@ -378,152 +168,61 @@ function ago(d) {
   if (s < 86400 * 7) return `${Math.round(s / 86400)}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
-function dayLabel(d) {
-  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
-  const diff = Math.round((start(new Date()) - start(d)) / 86400000);
-  if (diff <= 0) return "Today";
-  if (diff === 1) return "Yesterday";
-  if (diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
-  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
-}
 
-// Save / mark-read buttons, shared by Feed and Learn.
-const ICON_SAVE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`;
-const ICON_SAVED = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`;
-const ICON_READ = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5 9-10"/></svg>`;
-function actions(p) {
-  const e = prog.posts[p.url] || {};
-  return `<div class="acts">
-    <button class="act save" data-act="save" data-url="${esc(p.url)}" aria-pressed="${!!e.saved_at}" title="${e.saved_at ? "Remove from reading list" : "Save to reading list"}" aria-label="Save to reading list">${e.saved_at ? ICON_SAVED : ICON_SAVE}</button>
-    <button class="act read" data-act="read" data-url="${esc(p.url)}" aria-pressed="${!!e.read_at}" title="${e.read_at ? "Mark as unread" : "Mark as read"}" aria-label="Mark as read">${ICON_READ}</button></div>`;
-}
-function tags(p) {
-  return topicsOf(p).map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("");
-}
-function postCard(p) {
-  const d = when(p), e = prog.posts[p.url] || {};
-  return `<article class="post${e.read_at ? " is-read" : ""}"><div>
-      <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
-        <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}${tags(p)}</div>
-      <a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><h3 class="title">${esc(p.title)}</h3></a>
-      ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
-    </div>${actions(p)}</article>`;
-}
-
-// Browser-side progress (static mode). Mirrors progress.py: same fields, same stats.
-const PROGRESS_KEY = "aiwire.progress";
-const KEEP = ["title", "url", "date", "summary", "source", "source_name", "org", "group", "topics", "deep_dive"];
-function progressStats(posts) {
-  const read = Object.values(posts).filter((e) => e.read_at);
-  const readDays = new Set(read.map((e) => new Date(e.read_at).toLocaleDateString("en-CA")));
-  let streak = 0, day = todayStr();
-  if (!readDays.has(day)) day = shiftDay(day, -1);  // don't break the streak first thing in the morning
-  while (readDays.has(day)) { streak++; day = shiftDay(day, -1); }
-  const by_topic = {};
-  for (const e of read) for (const t of topicsOf(e)) by_topic[t] = (by_topic[t] || 0) + 1;
-  return {
-    read: read.length, streak, by_topic,
-    saved: Object.values(posts).filter((e) => e.saved_at && !e.read_at).length,
-    read_this_week: read.filter((e) => Date.now() - new Date(e.read_at) < 7 * 86400000).length,
-  };
-}
-const localProgress = () => { const posts = store.get(PROGRESS_KEY, {}); return { posts, stats: progressStats(posts) }; };
-
-async function setProgress(url, change) {
-  const post = data.posts.find((p) => p.url === url) || prog.posts[url];
-  if (!post) return;
-  if (STATIC) {
-    const posts = store.get(PROGRESS_KEY, {});
-    const e = { ...(posts[url] || {}), ...Object.fromEntries(KEEP.filter((k) => k in post).map((k) => [k, post[k]])) };
-    const now = new Date().toISOString();
-    if ("saved" in change) e.saved_at = change.saved ? now : null;
-    if ("read" in change) e.read_at = change.read ? now : null;
-    if (e.saved_at || e.read_at) posts[url] = e; else delete posts[url];
-    store.set(PROGRESS_KEY, posts);
-    prog = localProgress();
-  } else {
-    const res = await fetch("api/progress", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post, ...change }) });
-    if (!res.ok) return;
-    prog = await res.json();
-  }
-  renderFeed(); renderLearn();
-}
-document.addEventListener("click", (ev) => {
-  const b = ev.target.closest("[data-act]");
-  if (!b) return;
-  const e = prog.posts[b.dataset.url] || {};
-  setProgress(b.dataset.url, b.dataset.act === "save" ? { saved: !e.saved_at } : { read: !e.read_at });
-});
-
-// ---- Feed -------------------------------------------------------------------
-const feedPosts = () => data.posts.filter((p) => p.source !== "hn");
-function renderFilters() {
-  const posts = feedPosts();
+function renderSources() {
   const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
-  $("groups").innerHTML = GROUPS.map(([k, label]) =>
-    `<button class="chip group" data-group="${k}" aria-pressed="${group === k}">${label} <b>${posts.filter((p) => k === "all" || p.group === k).length}</b></button>`).join("") +
-    `<div class="seg" role="group" aria-label="Layout">${[["cards", "Cards"], ["list", "List"]].map(([k, l]) =>
-      `<button data-layout="${k}" aria-pressed="${layout === k}">${l}</button>`).join("")}</div>`;
-  const inGroup = posts.filter((p) => group === "all" || p.group === group);
-  const count = (o) => inGroup.filter((p) => p.org === o).length;
-  const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn" && (group === "all" || s.group === group)).map((s) => s.org))].sort((a, b) => count(b) - count(a));
-  $("orgs").innerHTML = `<button class="chip" data-org="all" aria-pressed="${org === "all"}">All sources</button>` + orgs.map((o) =>
-    `<button class="chip${failed.has(o) ? " err" : ""}" data-org="${esc(o)}" aria-pressed="${org === o}"><span class="dot" style="background:${color(o)}"></span>${esc(o)} <b>${count(o)}</b></button>`).join("");
+  const count = (o) => data.posts.filter((p) => p.org === o).length;
+  const orgs = [...new Set(data.sources.map((s) => s.org))].sort((a, b) => count(b) - count(a));
+  $("sources").innerHTML = `<button class="chip" data-org="all" aria-pressed="${org === "all"}">All blogs <b>${data.posts.length}</b></button>` +
+    orgs.map((o) => `<button class="chip${failed.has(o) ? " err" : ""}" data-org="${esc(o)}" aria-pressed="${org === o}">
+      <span class="dot" style="background:${color(o)}"></span>${esc(o)} <b>${count(o)}</b></button>`).join("");
 }
-function renderFeed() {
-  const q = $("q").value.trim().toLowerCase();
-  const posts = feedPosts()
-    .filter((p) => (group === "all" || p.group === group) && (org === "all" || p.org === org))
-    .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
-    .sort(newestFirst);
-  if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`; return; }
-  if (layout === "cards") { $("feed").innerHTML = renderSections(posts, !!q); return; }
-  let html = "", lastDay = "";
-  for (const p of posts.slice(0, 250)) {
-    const day = dayLabel(when(p));
-    if (day !== lastDay) { html += `<h2 class="day">${esc(day)}</h2>`; lastDay = day; }
-    html += postCard(p);
-  }
-  $("feed").innerHTML = html;
-}
-// Card layout: one section per category, newest first, 6 cards until expanded.
-const CATEGORIES = [
-  ["system-design", "System design", "Architecture, databases, scaling, reliability and performance"],
-  ["ai", "AI system design", "Agents, RAG, evals, LLM apps, inference and serving"],
-];
-const CARDS_PER_SECTION = 6;
-const expanded = new Set();
-// Each post goes in exactly one section: its main track.
-const categoryOf = (p) => topicsOf(p)[0];
 
 function card(p) {
-  const d = when(p), e = prog.posts[p.url] || {};
-  const extra = topicsOf(p).slice(1);
-  return `<article class="card${e.read_at ? " is-read" : ""}" style="--c:${color(p.org)}">
+  const d = when(p);
+  const second = (p.topics || []).filter((t) => t !== sectionOf(p) && SECTIONS.some(([id]) => id === t));
+  return `<a class="card" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener" style="--c:${color(p.org)}">
     <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
       <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}</div>
-    <a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><h3 class="title">${esc(p.title)}</h3></a>
+    <h3 class="title">${esc(p.title)}</h3>
     ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
-    <div class="card-foot"><span>${extra.map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("")}</span>${actions(p)}</div>
-  </article>`;
+    ${second.length ? `<span class="tag">Also: ${esc(SECTIONS.find(([id]) => id === second[0])[1])}</span>` : ""}
+  </a>`;
 }
 
-function renderSections(posts, searching) {
-  const sections = CATEGORIES.map(([id, label, blurb]) => ({ id, label, blurb, posts: posts.filter((p) => categoryOf(p) === id) }))
-    .filter((s) => s.posts.length);
-  const nav = `<nav class="cat-nav" aria-label="Jump to a category">${sections.map((s) =>
-    `<a href="#cat-${s.id}" data-jump-cat="${s.id}">${s.label} <b>${s.posts.length}</b></a>`).join("")}</nav>`;
-  return nav + sections.map((s) => {
-    const open = searching || expanded.has(s.id);
-    const shown = open ? s.posts : s.posts.slice(0, CARDS_PER_SECTION);
-    const more = s.posts.length - CARDS_PER_SECTION;
-    return `<section class="cat" id="cat-${s.id}">
-      <div class="cat-head"><div><h2>${s.label} <span class="n">${s.posts.length}</span></h2><p>${s.blurb}</p></div>
-        ${more > 0 && !searching ? `<button class="more" data-expand="${s.id}">${open ? "Show less" : `Show all ${s.posts.length}`}</button>` : ""}</div>
-      <div class="cards">${shown.map(card).join("")}</div></section>`;
-  }).join("");
+function renderFeed() {
+  const q = $("q").value.trim().toLowerCase();
+  const posts = data.posts
+    .filter((p) => (org === "all" || p.org === org))
+    .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
+    .sort((a, b) => when(b) - when(a));
+  if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet."}</div>`; return; }
+
+  const sections = SECTIONS.map(([id, label, blurb]) => ({ id, label, blurb, posts: posts.filter((p) => sectionOf(p) === id) })).filter((s) => s.posts.length);
+  $("feed").innerHTML =
+    `<nav class="cat-nav" aria-label="Jump to a section">${sections.map((s) => `<a href="#cat-${s.id}" data-jump="${s.id}">${s.label} <b>${s.posts.length}</b></a>`).join("")}</nav>` +
+    sections.map((s) => {
+      const open = q || expanded.has(s.id);
+      const shown = open ? s.posts : s.posts.slice(0, PER_SECTION);
+      return `<section class="cat" id="cat-${s.id}">
+        <div class="cat-head"><div><h2>${s.label} <span class="n">${s.posts.length}</span></h2><p>${s.blurb}</p></div>
+          ${s.posts.length > PER_SECTION && !q ? `<button class="more" data-expand="${s.id}">${open ? "Show less" : `Show all ${s.posts.length}`}</button>` : ""}</div>
+        <div class="cards">${shown.map(card).join("")}</div></section>`;
+    }).join("");
 }
 
+function renderStatus() {
+  const bad = data.sources.filter((s) => !s.ok);
+  $("status").innerHTML = `${data.updated ? "Updated " + ago(new Date(data.updated)) : ""} · ${data.sources.length} engineering blogs · refreshed every 30 minutes` +
+    (bad.length ? ` · <span class="bad">${bad.length} unavailable: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
+}
+
+$("sources").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-org]");
+  if (!b) return;
+  org = b.dataset.org; store.set("aiwire.org", org);
+  renderSources(); renderFeed();
+});
 $("feed").addEventListener("click", (e) => {
   const x = e.target.closest("[data-expand]");
   if (x) {
@@ -533,210 +232,10 @@ $("feed").addEventListener("click", (e) => {
     if (!expanded.has(id)) $("cat-" + id)?.scrollIntoView({ block: "start" });
     return;
   }
-  const j = e.target.closest("[data-jump-cat]");
-  if (j) { e.preventDefault(); $("cat-" + j.dataset.jumpCat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }
-});
-
-function renderHN() {
-  const q = $("q").value.trim().toLowerCase();
-  const items = data.posts.filter((p) => p.source === "hn" && (!q || p.title.toLowerCase().includes(q))).sort(newestFirst).slice(0, 15);
-  $("hn").innerHTML = items.map((p) => `<div class="hn"><div class="pts">${p.points}</div><div>
-      <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
-      <div class="m">${esc(hostOf(p.url))} · ${ago(when(p))} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div></div>`).join("")
-    || `<div class="empty" style="padding:20px 0">No stories.</div>`;
-}
-function renderStatus() {
-  const bad = data.sources.filter((s) => !s.ok);
-  $("status").innerHTML = `${data.updated ? "Updated " + ago(new Date(data.updated)) : "Not updated yet"} · ${data.sources.length} sources · ${data.posts.length} posts` +
-    (bad.length ? ` · <span class="bad" title="${esc(bad.map((s) => s.name + ": " + s.error).join("\n"))}">${bad.length} failed: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
-}
-$("groups").addEventListener("click", (e) => {
-  const l = e.target.closest("[data-layout]");
-  if (l) { layout = l.dataset.layout; store.set("aiwire.layout", layout); renderFilters(); renderFeed(); return; }
-  const b = e.target.closest("[data-group]");
-  if (!b) return;
-  group = b.dataset.group; org = "all"; store.set("aiwire.group", group); store.set("aiwire.org", org);
-  renderFilters(); renderFeed();
-});
-$("orgs").addEventListener("click", (e) => { const b = e.target.closest("[data-org]"); if (b) { org = b.dataset.org; store.set("aiwire.org", org); renderFilters(); renderFeed(); } });
-$("q").addEventListener("input", () => { renderFeed(); renderHN(); });
-
-// ---- This week --------------------------------------------------------------
-let weekEnd = location.hash.match(/^#week-(\d{4}-\d{2}-\d{2})$/)?.[1] || null;
-const fmtDay = (day, opts) => new Date(day + "T12:00:00").toLocaleDateString(undefined, opts);
-const todayStr = () => new Date().toLocaleDateString("en-CA");
-const localDay = (p) => when(p).toLocaleDateString("en-CA");
-const shiftDay = (day, n) => { const d = new Date(day + "T12:00:00"); d.setDate(d.getDate() + n); return d.toLocaleDateString("en-CA"); };
-
-async function fetchWeek(end) {
-  const index = await getJSON(URLS.days);
-  const have = new Set(index.map((e) => e.date));
-  const days = Array.from({ length: 7 }, (_, i) => shiftDay(end, -i));
-  const empty = (date) => ({ date, labs: [], hn: [], counts: { labs: 0, orgs: 0, hn: 0 } });
-  const eds = await Promise.all(days.map((d) => have.has(d) ? getJSON(URLS.day(d)).catch(() => empty(d)) : empty(d)));
-  const newer = end < todayStr() ? (shiftDay(end, 7) < todayStr() ? shiftDay(end, 7) : todayStr()) : null;
-  return {
-    start: days[6], end: days[0], days: eds,
-    top: eds.flatMap((e) => e.hn).sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 5),
-    counts: { labs: eds.reduce((n, e) => n + e.counts.labs, 0), hn: eds.reduce((n, e) => n + e.counts.hn, 0) },
-    older: index.some((e) => e.date < days[6]) ? shiftDay(end, -7) : null,
-    newer,
-  };
-}
-
-async function loadWeek() {
-  const w = await fetchWeek(weekEnd || todayStr());
-  if (view === "week") history.replaceState(null, "", weekEnd ? "#week-" + weekEnd : "#week");
-  const range = `${fmtDay(w.start, { month: "short", day: "numeric" })} – ${fmtDay(w.end, { month: "short", day: "numeric" })}`;
-  const max = Math.max(1, ...w.days.map((d) => Math.max(d.counts.labs, d.counts.hn)));
-  let html = `<nav class="wk-nav">
-      <button data-week="${w.older || ""}" ${w.older ? "" : "disabled"} aria-label="Previous week">← <span class="lbl">Previous week</span></button>
-      <span class="range">${range}</span>
-      <button data-week="${w.newer || ""}" ${w.newer ? "" : "disabled"} aria-label="Next week"><span class="lbl">Next week</span> →</button></nav>
-    <div class="kicker">AI Wire · ${w.newer ? "Week of " + fmtDay(w.start, { month: "long", day: "numeric" }) : "This week"}</div>
-    <h1 class="big">The week in system design &amp; AI</h1>
-    <p class="lede"><b>${w.counts.labs} posts</b> from the blogs and <b>${w.counts.hn} stories</b> on Hacker News, ${range}${w.newer ? "" : ", so far"}.</p>
-    <div class="strip">${[...w.days].reverse().map((d) => `
-      <button data-jump="${d.date}" class="${d.date === todayStr() ? "today" : ""}" title="${d.counts.labs} blog posts, ${d.counts.hn} HN stories">
-        <span class="wd">${fmtDay(d.date, { weekday: "short" })}</span><span class="dn">${fmtDay(d.date, { day: "numeric" })}</span>
-        <span class="bars"><i class="l" style="height:${(d.counts.labs / max) * 100}%"></i><i class="h" style="height:${(d.counts.hn / max) * 100}%"></i></span>
-        <span class="ct">${d.counts.labs + d.counts.hn}</span></button>`).join("")}</div>
-    <div class="legend"><span><i style="background:var(--accent)"></i>Blog posts</span><span><i style="background:var(--faint)"></i>Hacker News</span></div>`;
-  if (w.top.length) html += `<section class="sec"><h2>Biggest stories this week</h2>` + w.top.map((p, n) => `
-      <div class="top-item"><span class="rank">${n + 1}</span><a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
-        <span class="pts">▲ ${p.points}</span>
-        <div class="m">${esc(hostOf(p.url))} · ${fmtDay(localDay(p), { weekday: "short" })} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div>`).join("") + `</section>`;
-  html += `<section class="sec"><h2>Day by day</h2>` + w.days.map((d) => {
-    const posts = d.labs.flatMap((g) => g.posts).sort(newestFirst);
-    const hn = d.hn.slice(0, 3), quiet = !posts.length && !hn.length;
-    return `<div class="tl-day${quiet ? " quiet" : ""}" id="day-${d.date}">
-      <div class="tl-when"><div class="wd">${d.date === todayStr() ? "Today" : fmtDay(d.date, { weekday: "long" })}</div><div class="dt">${fmtDay(d.date, { month: "long", day: "numeric" })}</div></div>
-      <div class="tl-body">` + posts.map((p) => `<a class="tl-item" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
-        <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span>${tags(p)}</div>
-        <h3 class="title">${esc(p.title)}</h3></a>`).join("") +
-      (hn.length ? `<div class="tl-hn"><div class="h">Top on Hacker News</div>${hn.map((p) => `<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><span class="p">▲ ${p.points}</span><span>${esc(p.title)}</span></a>`).join("")}</div>` : "") +
-      (quiet ? `<div class="tl-quiet">${d.date === todayStr() ? "Nothing yet today." : "A quiet day."}</div>` : "") + `</div></div>`;
-  }).join("") + `</section>`;
-  $("week").innerHTML = html;
-}
-$("week").addEventListener("click", (e) => {
-  const wk = e.target.closest("[data-week]");
-  if (wk?.dataset.week) { weekEnd = wk.dataset.week === todayStr() ? null : wk.dataset.week; loadWeek(); scrollTo({ top: 0 }); return; }
   const j = e.target.closest("[data-jump]");
-  if (j) $("day-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth" });
+  if (j) { e.preventDefault(); $("cat-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" }); }
 });
-
-// ---- Learn ------------------------------------------------------------------
-let track = store.get("aiwire.track", "all");
-let ltab = store.get("aiwire.ltab", "toread");
-
-// Everything learnable: deep dives in the current data, plus anything you saved
-// or read earlier that has since dropped off the feeds.
-function learnPool() {
-  const map = new Map(feedPosts().map((p) => [p.url, p]));
-  for (const [url, e] of Object.entries(prog.posts)) if (!map.has(url)) map.set(url, e);
-  return [...map.values()];
-}
-function renderLearn() {
-  const pool = learnPool();
-  const st = (p) => prog.posts[p.url] || {};
-  const inTrack = (p) => track === "all" || topicsOf(p).includes(track);
-  $("tracks").innerHTML = TRACKS.map(([k, label]) => {
-    const ps = pool.filter((p) => k === "all" || topicsOf(p).includes(k));
-    return `<button class="track" data-track="${k}" aria-pressed="${track === k}"><span class="n">${label}</span>
-      <span class="c">${ps.length} posts · ${ps.filter((p) => st(p).read_at).length} read</span></button>`;
-  }).join("");
-  const lists = {
-    toread: pool.filter((p) => inTrack(p) && !st(p).read_at).sort(newestFirst),
-    saved: pool.filter((p) => inTrack(p) && st(p).saved_at && !st(p).read_at).sort((a, b) => new Date(st(b).saved_at) - new Date(st(a).saved_at)),
-    read: pool.filter((p) => inTrack(p) && st(p).read_at).sort((a, b) => new Date(st(b).read_at) - new Date(st(a).read_at)),
-  };
-  $("ltabs").innerHTML = [["toread", "To read"], ["saved", "Reading list"], ["read", "Read"]].map(([k, l]) =>
-    `<button data-ltab="${k}" aria-pressed="${ltab === k}">${l}<b>${lists[k].length}</b></button>`).join("");
-  const empty = {
-    toread: "You've read everything here. Nice work.",
-    saved: "Nothing saved yet. Use the bookmark on any post to build your reading list.",
-    read: "Posts you mark as read will show up here.",
-  }[ltab];
-  const items = lists[ltab];
-  $("learn-list").innerHTML = items.length ? items.slice(0, 150).map(postCard).join("") : `<div class="empty">${empty}</div>`;
-  renderProgress(pool);
-}
-function renderProgress(pool) {
-  const s = prog.stats || {};
-  // Count with each post's current tags, so the bars match the track buttons even after the rules change.
-  const tracks = TRACKS.slice(1).map(([k, label]) => {
-    const ps = pool.filter((p) => topicsOf(p).includes(k));
-    return { k, label, total: ps.length, read: ps.filter((p) => prog.posts[p.url]?.read_at).length };
-  }).filter((t) => t.total);
-  const saved = Object.values(prog.posts).filter((e) => e.saved_at && !e.read_at).sort((a, b) => new Date(a.saved_at) - new Date(b.saved_at));
-  const weakest = [...tracks].sort((a, b) => a.read / a.total - b.read / b.total)[0];
-  const suggestion = saved[0] || (weakest && pool.filter((p) => topicsOf(p).includes(weakest.k) && !prog.posts[p.url]?.read_at).sort(newestFirst)[0]);
-  $("progress").innerHTML = `<h3>Your progress</h3><p class="sub">${STATIC ? "Saved in this browser" : "Saved on this computer"}</p>
-    <div class="stats"><div class="stat"><b>${s.streak || 0}</b><span>day streak</span></div>
-      <div class="stat"><b>${s.read_this_week || 0}</b><span>this week</span></div>
-      <div class="stat"><b>${s.saved || 0}</b><span>to read</span></div></div>
-    <div class="bars-h">${tracks.map((t) => `<div class="bh"><div class="row"><span>${t.label}</span><b>${t.read} / ${t.total}</b></div>
-      <div class="track-bar"><i style="width:${Math.min(100, (t.read / t.total) * 100)}%"></i></div></div>`).join("")}</div>
-    ${suggestion ? `<div class="next"><div class="k">${saved[0] ? "Next on your reading list" : "Suggested · " + esc(weakest.label)}</div>
-      <a href="${esc(safeUrl(suggestion.url))}" target="_blank" rel="noopener">${esc(suggestion.title)}</a>
-      <div class="m">${esc(suggestion.source_name)}</div></div>` : ""}
-    ${STATIC ? `<div class="io"><button data-io="export">Export progress</button><button data-io="import">Import</button></div>` : ""}`;
-}
-// Export / import (static mode): move your progress between browsers or keep a backup.
-$("progress").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-io]");
-  if (!b) return;
-  if (b.dataset.io === "export") {
-    const blob = new Blob([JSON.stringify({ version: 1, posts: store.get(PROGRESS_KEY, {}) }, null, 1)], { type: "application/json" });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `ai-wire-progress-${todayStr()}.json` });
-    a.click(); URL.revokeObjectURL(a.href);
-    return;
-  }
-  const input = Object.assign(document.createElement("input"), { type: "file", accept: "application/json,.json" });
-  input.onchange = async () => {
-    try {
-      const incoming = JSON.parse(await input.files[0].text()).posts || {};
-      const posts = store.get(PROGRESS_KEY, {});
-      for (const [url, entry] of Object.entries(incoming)) {
-        if (!/^https?:\/\//.test(url) || typeof entry !== "object") continue;
-        posts[url] = { ...posts[url], ...entry };  // merge: imported entries win
-      }
-      store.set(PROGRESS_KEY, posts);
-      prog = localProgress(); renderFeed(); renderLearn();
-    } catch { alert("That file doesn't look like an AI Wire progress export."); }
-  };
-  input.click();
-});
-$("tracks").addEventListener("click", (e) => { const b = e.target.closest("[data-track]"); if (b) { track = b.dataset.track; store.set("aiwire.track", track); renderLearn(); } });
-$("ltabs").addEventListener("click", (e) => { const b = e.target.closest("[data-ltab]"); if (b) { ltab = b.dataset.ltab; store.set("aiwire.ltab", ltab); renderLearn(); } });
-
-// ---- Views, theme, loading --------------------------------------------------
-let view = location.hash.startsWith("#week") ? "week" : location.hash === "#learn" ? "learn" : store.get("aiwire.view3", "live");
-function setView(v) {
-  view = v;
-  document.body.dataset.view = v;
-  store.set("aiwire.view3", v);
-  document.querySelectorAll("#views button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
-  if (v === "week") loadWeek().catch(() => {});
-  else history.replaceState(null, "", v === "learn" ? "#learn" : location.pathname);
-}
-$("views").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (b) setView(b.dataset.v); });
-
-function renderAll() { renderFilters(); renderFeed(); renderHN(); renderStatus(); renderLearn(); }
-async function load(refresh = false) {
-  const [news, p] = await Promise.all([
-    refresh ? fetch("api/refresh", { method: "POST" }).then((r) => r.json()) : getJSON(URLS.news),
-    STATIC ? localProgress() : getJSON("api/progress"),
-  ]);
-  data = news; prog = p;
-  if (org !== "all" && !data.posts.some((x) => x.org === org)) org = "all";
-  renderAll();
-}
-$("refresh").addEventListener("click", async () => {
-  const b = $("refresh"); b.classList.add("spin"); b.disabled = true;
-  try { await load(true); if (view === "week") await loadWeek(); } finally { b.classList.remove("spin"); b.disabled = false; }
-});
+$("q").addEventListener("input", renderFeed);
 $("theme").addEventListener("click", () => {
   const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#17150f";
   document.documentElement.dataset.theme = dark ? "light" : "dark";
@@ -744,10 +243,16 @@ $("theme").addEventListener("click", () => {
 });
 document.documentElement.dataset.theme = store.get("aiwire.theme", "dark");
 
-if (STATIC) document.body.classList.add("static");  // no Refresh button: GitHub updates the data every 30 minutes
-setView(view);
-load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't load the news. Try reloading the page.</div>`; });
-setInterval(() => load().then(() => view === "week" && loadWeek()).catch(() => {}), 5 * 60 * 1000);
+async function load() {
+  const res = await fetch(NEWS_URL, { cache: "no-cache" });
+  if (!res.ok) throw new Error(res.status);
+  data = await res.json();
+  data.posts = data.posts.filter((p) => p.group === "engineering");
+  if (org !== "all" && !data.posts.some((p) => p.org === org)) org = "all";
+  renderSources(); renderFeed(); renderStatus();
+}
+load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't load the posts. Try reloading the page.</div>`; });
+setInterval(() => load().catch(() => {}), 5 * 60 * 1000);
 </script>
 </body>
 </html>
