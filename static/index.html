@@ -101,6 +101,35 @@ h2.day:first-child { margin-top: 8px; }
 .act.read[aria-pressed="true"] { color: var(--good); }
 .is-read .title { color: var(--faint); }
 
+/* Layout switch (Cards / List) */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 2px; flex: none; background: var(--surface); }
+.seg button { border: 0; background: none; border-radius: 6px; padding: 3px 10px; font-size: 12.5px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 500; }
+
+/* Card sections */
+.cat-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0 4px; }
+.cat-nav a { font-size: 12.5px; color: var(--muted); border-bottom: 1px dotted var(--faint); padding: 2px 0; margin-right: 12px; }
+.cat-nav a:hover { color: var(--accent); border-color: var(--accent); }
+.cat-nav a b { font-weight: 500; color: var(--faint); margin-left: 3px; }
+.cat { margin-top: 30px; scroll-margin-top: 160px; }
+.cat-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.cat-head h2 { margin: 0; font: 700 23px/1.2 var(--serif); letter-spacing: -0.01em; }
+.cat-head h2 .n { font: 500 13px var(--sans); color: var(--faint); margin-left: 4px; letter-spacing: 0; }
+.cat-head p { margin: 3px 0 0; color: var(--faint); font-size: 13px; }
+.more { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
+.more:hover { color: var(--accent); border-color: var(--accent); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; transition: border-color .15s, transform .15s; }
+.card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--c); opacity: .85; }
+.card:hover { border-color: var(--faint); transform: translateY(-1px); }
+.card .meta { margin: 0; font-size: 12px; }
+.card .title { font-size: 17px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card a:hover .title { color: var(--accent); }
+.card .summary { font-size: 13.5px; -webkit-line-clamp: 3; margin: 0; }
+.card-foot { margin-top: auto; padding-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; }
+.card .acts { flex-direction: row; padding: 0; }
+.card.is-read { opacity: .62; }
+
 aside { align-self: start; position: sticky; top: 150px; }
 .learn aside { top: 90px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 8px; }
@@ -204,6 +233,9 @@ footer .bad { color: var(--accent); }
   .layout .hn:nth-child(n+6) { display: none; }
 }
 @media (max-width: 600px) {
+  header { position: static; }  /* on phones the filters would cover a quarter of the screen */
+  .cat, .tl-day { scroll-margin-top: 12px; }
+  .tl-when { top: 12px; }
   .wrap { padding: 0 16px; }
   .bar { height: auto; flex-wrap: wrap; padding: 10px 0; gap: 6px; }
   .logo { font-size: 20px; }
@@ -318,6 +350,7 @@ let prog = { posts: {}, stats: {} };
 let group = store.get("aiwire.group", "all");
 let org = store.get("aiwire.org", "all");
 let deepOnly = store.get("aiwire.deepOnly", false);
+let layout = store.get("aiwire.layout", "cards");
 const lastVisit = store.get("ainews.lastVisit", null);
 store.set("ainews.lastVisit", new Date().toISOString());
 const isNew = (p) => lastVisit && p.first_seen && new Date(p.first_seen) > new Date(lastVisit);
@@ -382,7 +415,9 @@ function renderFilters() {
   const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
   $("groups").innerHTML = GROUPS.map(([k, label]) =>
     `<button class="chip group" data-group="${k}" aria-pressed="${group === k}">${label} <b>${posts.filter((p) => k === "all" || p.group === k).length}</b></button>`).join("") +
-    `<label class="toggle"><input type="checkbox" id="deep" ${deepOnly ? "checked" : ""}> Deep dives only</label>`;
+    `<label class="toggle"><input type="checkbox" id="deep" ${deepOnly ? "checked" : ""}> Deep dives only</label>` +
+    `<div class="seg" role="group" aria-label="Layout">${[["cards", "Cards"], ["list", "List"]].map(([k, l]) =>
+      `<button data-layout="${k}" aria-pressed="${layout === k}">${l}</button>`).join("")}</div>`;
   const inGroup = posts.filter((p) => group === "all" || p.group === group);
   const count = (o) => inGroup.filter((p) => p.org === o).length;
   const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn" && (group === "all" || s.group === group)).map((s) => s.org))].sort((a, b) => count(b) - count(a));
@@ -396,6 +431,7 @@ function renderFeed() {
     .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
     .sort(newestFirst);
   if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`; return; }
+  if (layout === "cards") { $("feed").innerHTML = renderSections(posts, !!q); return; }
   let html = "", lastDay = "";
   for (const p of posts.slice(0, 250)) {
     const day = dayLabel(when(p));
@@ -404,6 +440,61 @@ function renderFeed() {
   }
   $("feed").innerHTML = html;
 }
+// Card layout: one section per category, newest first, 6 cards until expanded.
+const CATEGORIES = [
+  ["agents", "AI agents", "Agents, tool use, RAG, evals and coding assistants"],
+  ["system-design", "System design", "Architecture, databases, scaling and reliability"],
+  ["infra", "Infra & performance", "GPUs, inference, performance and cost"],
+  ["research", "LLM research", "Training, alignment, reasoning and new models"],
+  ["general", "General engineering", "Other technical write-ups from engineering teams"],
+  ["news", "Announcements & launches", "Product launches, partnerships and company news"],
+];
+const CARDS_PER_SECTION = 6;
+const expanded = new Set();
+// Each post goes in exactly one section: its main topic, or "news" if it isn't a deep dive.
+const categoryOf = (p) => (p.deep_dive ? topicsOf(p)[0] : "news");
+
+function card(p) {
+  const d = when(p), e = prog.posts[p.url] || {};
+  const extra = p.deep_dive ? topicsOf(p).slice(1) : [];
+  return `<article class="card${e.read_at ? " is-read" : ""}" style="--c:${color(p.org)}">
+    <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
+      <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}</div>
+    <a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><h3 class="title">${esc(p.title)}</h3></a>
+    ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
+    <div class="card-foot"><span>${extra.map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("")}</span>${actions(p)}</div>
+  </article>`;
+}
+
+function renderSections(posts, searching) {
+  const sections = CATEGORIES.map(([id, label, blurb]) => ({ id, label, blurb, posts: posts.filter((p) => categoryOf(p) === id) }))
+    .filter((s) => s.posts.length);
+  const nav = `<nav class="cat-nav" aria-label="Jump to a category">${sections.map((s) =>
+    `<a href="#cat-${s.id}" data-jump-cat="${s.id}">${s.label} <b>${s.posts.length}</b></a>`).join("")}</nav>`;
+  return nav + sections.map((s) => {
+    const open = searching || expanded.has(s.id);
+    const shown = open ? s.posts : s.posts.slice(0, CARDS_PER_SECTION);
+    const more = s.posts.length - CARDS_PER_SECTION;
+    return `<section class="cat" id="cat-${s.id}">
+      <div class="cat-head"><div><h2>${s.label} <span class="n">${s.posts.length}</span></h2><p>${s.blurb}</p></div>
+        ${more > 0 && !searching ? `<button class="more" data-expand="${s.id}">${open ? "Show less" : `Show all ${s.posts.length}`}</button>` : ""}</div>
+      <div class="cards">${shown.map(card).join("")}</div></section>`;
+  }).join("");
+}
+
+$("feed").addEventListener("click", (e) => {
+  const x = e.target.closest("[data-expand]");
+  if (x) {
+    const id = x.dataset.expand;
+    expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+    renderFeed();
+    if (!expanded.has(id)) $("cat-" + id)?.scrollIntoView({ block: "start" });
+    return;
+  }
+  const j = e.target.closest("[data-jump-cat]");
+  if (j) { e.preventDefault(); $("cat-" + j.dataset.jumpCat)?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+});
+
 function renderHN() {
   const q = $("q").value.trim().toLowerCase();
   const items = data.posts.filter((p) => p.source === "hn" && (!q || p.title.toLowerCase().includes(q))).sort(newestFirst).slice(0, 15);
@@ -418,6 +509,8 @@ function renderStatus() {
     (bad.length ? ` · <span class="bad" title="${esc(bad.map((s) => s.name + ": " + s.error).join("\n"))}">${bad.length} failed: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
 }
 $("groups").addEventListener("click", (e) => {
+  const l = e.target.closest("[data-layout]");
+  if (l) { layout = l.dataset.layout; store.set("aiwire.layout", layout); renderFilters(); renderFeed(); return; }
   const b = e.target.closest("[data-group]");
   if (!b) return;
   group = b.dataset.group; org = "all"; store.set("aiwire.group", group); store.set("aiwire.org", org);
