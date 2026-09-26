@@ -1,36 +1,38 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Wire</title>
-<meta name="description" content="System design and AI system design deep dives from company engineering blogs, updated every 30 minutes.">
+<meta name="description" content="Trending AI news and AI engineering deep dives, updated every 30 minutes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
 <style>
-/* Palette after tdd.cat (The Daily Diff): newsprint cream + oxblood, or warm charcoal + amber. */
+/* Palette from Claude (claude.ai): warm off-white / near-black, with the clay accent.
+   Fonts: Claude uses Anthropic Serif and Anthropic Sans, which aren't licensed for other
+   sites; Source Serif 4 and Inter are the closest free equivalents. */
 :root {
-  --bg: #f8f4e8; --surface: #fffdf6; --surface-2: #efe8d4;
-  --text: #1b1a17; --muted: #45423a; --faint: #7c7563;
-  --line: rgba(32, 30, 25, .14); --rule: #201e19;
-  --accent: #8a1f11; --accent-soft: rgba(138, 31, 17, .08);
-  --serif: "Source Serif 4", Georgia, serif;
-  --sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --bg: #f9f9f7; --surface: #ffffff; --surface-2: #f0efec;
+  --text: #131313; --muted: #383835; --faint: #7b7974;
+  --line: rgba(30, 30, 29, .12); --rule: rgba(30, 30, 29, .22);
+  --accent: #c6613f; --accent-soft: rgba(217, 119, 87, .13);
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
-    --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
-    --line: rgba(217, 208, 189, .12); --rule: #b0a790;
-    --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14);
+    --bg: #151515; --surface: #20201f; --surface-2: #2a2a28;
+    --text: #f9f9f7; --muted: #c3c2b7; --faint: #97958d;
+    --line: rgba(225, 224, 217, .1); --rule: rgba(225, 224, 217, .2);
+    --accent: #d97757; --accent-soft: rgba(217, 119, 87, .16);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
-  --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
-  --line: rgba(217, 208, 189, .12); --rule: #b0a790;
-  --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14);
+  --bg: #151515; --surface: #20201f; --surface-2: #2a2a28;
+  --text: #f9f9f7; --muted: #c3c2b7; --faint: #97958d;
+  --line: rgba(225, 224, 217, .1); --rule: rgba(225, 224, 217, .2);
+  --accent: #d97757; --accent-soft: rgba(217, 119, 87, .16);
 }
 
 * { box-sizing: border-box; }
@@ -42,64 +44,102 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
 /* Masthead */
-header { border-bottom: 3px double var(--rule); }
-.bar { display: flex; align-items: center; gap: 14px; padding: 22px 0 16px; }
-.logo { font: 700 30px/1 var(--serif); letter-spacing: -0.015em; white-space: nowrap; }
-.logo span { color: var(--accent); }
+header { border-bottom: 1px solid var(--line); }
+.bar { display: flex; align-items: center; gap: 14px; padding: 22px 0 14px; }
+.brand { font: 500 30px/1 var(--serif); letter-spacing: -0.02em; white-space: nowrap; }
+.brand span { color: var(--accent); }
 .tagline { color: var(--faint); font-size: 13.5px; margin-top: 6px; }
-.search { flex: 1; max-width: 340px; margin-left: auto; position: relative; }
+.search { flex: 1; max-width: 320px; margin-left: auto; position: relative; }
 .search input { width: 100%; height: 38px; padding: 0 12px 0 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
 .search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .search svg { position: absolute; left: 11px; top: 11px; color: var(--faint); }
 .icon-btn { height: 38px; width: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--muted); flex: none; }
 .icon-btn:hover { color: var(--text); }
 
-/* Source filter */
-.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 0 14px; }
-.chips::-webkit-scrollbar { display: none; }
-.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
-.chip b { font-weight: 500; color: var(--faint); font-size: 11.5px; }
-.chip:hover { color: var(--text); }
-.chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
-.chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
-.chip.err { text-decoration: line-through; opacity: .6; }
-.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+/* Tabs: newspaper section names under the masthead */
+.tabs { display: flex; gap: 28px; margin-bottom: -1px; }
+.tabs button { background: none; border: 0; padding: 10px 0 12px; font: 500 14.5px var(--sans); color: var(--faint); border-bottom: 2px solid transparent; display: inline-flex; align-items: center; gap: 7px; }
+.tabs button:hover { color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs b { font-weight: 500; font-size: 12px; color: var(--faint); background: var(--surface-2); border-radius: 999px; padding: 0 7px; }
 
-/* Sections of cards */
+/* Company logo: a small white tile, so dark and light logos both read in either theme */
+.logo { flex: none; width: 20px; height: 20px; border-radius: 5px; background: #fff; padding: 2px; object-fit: contain; box-shadow: 0 0 0 1px var(--line); }
+.logo.lg { width: 40px; height: 40px; border-radius: 9px; padding: 4px; }
+.logo.md { width: 24px; height: 24px; border-radius: 6px; }
+.logo.sm { width: 16px; height: 16px; border-radius: 4px; padding: 1px; }
+
+/* Sections */
 main { padding-bottom: 56px; }
-.cat-nav { display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 16px 0 0; font-size: 13px; }
-.cat-nav a { color: var(--muted); border-bottom: 1px dotted var(--faint); }
-.cat-nav a:hover { color: var(--accent); border-color: var(--accent); }
-.cat-nav a b { font-weight: 500; color: var(--faint); margin-left: 3px; }
-.cat { margin-top: 30px; scroll-margin-top: 16px; }
-.cat-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
-.cat-head h2 { margin: 0; font: 700 24px/1.2 var(--serif); letter-spacing: -0.01em; }
-.cat-head h2 .n { font: 500 13px var(--sans); color: var(--faint); margin-left: 4px; }
-.cat-head p { margin: 3px 0 0; color: var(--faint); font-size: 13px; }
+.panel[hidden] { display: none; }
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 28px 0 12px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+.sec-head h2 { margin: 0; font: 400 28px/1.2 var(--serif); letter-spacing: -0.015em; }
+.sec-head p { margin: 3px 0 0; color: var(--faint); font-size: 13px; }
 .more { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 12px; font-size: 12.5px; color: var(--muted); }
 .more:hover { color: var(--accent); border-color: var(--accent); }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; transition: border-color .15s, transform .15s; }
-.card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--c); opacity: .85; }
-.card:hover { border-color: var(--faint); transform: translateY(-1px); }
-.meta { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.more-row { display: flex; justify-content: center; padding-top: 22px; }
+.empty { padding: 32px 0; color: var(--muted); text-align: center; }
 .new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; }
-.title { font: 600 17.5px/1.3 var(--serif); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.card:hover .title { color: var(--accent); }
+.meta { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--faint); flex-wrap: wrap; }
 .summary { color: var(--muted); font-size: 13.5px; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.tag { margin-top: auto; align-self: flex-start; font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
-.empty { padding: 48px 0; color: var(--muted); text-align: center; }
+.title { margin: 0; font-family: var(--serif); font-weight: 500; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* AI news: ranked list, two columns on wide screens */
+.trend { display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; }
+.story { display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.rank { font: 400 22px/1.2 var(--serif); color: var(--faint); text-align: right; }
+.story .t { font: 500 17px/1.35 var(--serif); }
+.story .t:hover { color: var(--accent); }
+.story .meta { margin-top: 5px; }
+.story .pts { color: var(--accent); font-weight: 600; }
+.story .meta a:hover { color: var(--text); text-decoration: underline; }
+
+/* AI engineering blogs: company chips + magazine */
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 12px 0 18px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 11px 3px 4px; font-size: 12.5px; color: var(--muted); display: inline-flex; gap: 7px; align-items: center; }
+.chip.all { padding-left: 11px; }
+.chip b { font-weight: 500; color: var(--faint); font-size: 11.5px; }
+.chip:hover { color: var(--text); }
+.chip[aria-pressed="true"] { background: var(--surface-2); border-color: var(--rule); color: var(--text); }
+.chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
+.chip.err { text-decoration: line-through; opacity: .6; }
+
+.kick { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.byline { display: flex; align-items: center; gap: 9px; }
+.mag { display: grid; grid-template-columns: 1.6fr 1fr; gap: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.mlead { display: flex; flex-direction: column; gap: 12px; padding: 28px; border-radius: 16px; min-height: 320px; justify-content: flex-end;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 24%, transparent), transparent 65%), var(--surface); border: 1px solid var(--line); }
+.mlead .title { font-size: 36px; font-weight: 400; line-height: 1.12; letter-spacing: -0.015em; -webkit-line-clamp: 4; }
+.mlead .summary { font-size: 15.5px; }
+.mside { display: flex; flex-direction: column; }
+.msecond { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.msecond:first-child { padding-top: 0; }
+.msecond:last-child { border-bottom: 0; }
+.msecond .title { font-size: 20px; line-height: 1.25; }
+.msecond .summary { -webkit-line-clamp: 2; }
+.mcols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
+.mitem { display: flex; flex-direction: column; gap: 7px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.mitem .title { font-size: 17px; line-height: 1.3; }
+.mlead:hover .title, .msecond:hover .title, .mitem:hover .title { color: var(--accent); }
 footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
 footer .bad { color: var(--accent); }
 
+@media (max-width: 800px) {
+  .trend, .mag { grid-template-columns: 1fr; }
+  .mcols { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 600px) {
   .wrap { padding: 0 16px; }
-  .bar { flex-wrap: wrap; padding: 16px 0 12px; }
-  .logo { font-size: 25px; }
-  .bar > div:first-child { flex: 1 1 0; min-width: 0; }  /* theme button stays beside the logo */
+  .bar { flex-wrap: wrap; padding: 16px 0 10px; }
+  .bar > div:first-child { flex: 1 1 0; min-width: 0; }  /* theme button stays beside the name */
+  .brand { font-size: 25px; }
   .search { order: 3; flex-basis: 100%; max-width: none; }
-  .icon-btn { margin-left: auto; }
-  .cards { grid-template-columns: 1fr; }
+  .tabs { gap: 20px; }
+  .tabs button { font-size: 14px; }
+  .sec-head h2 { font-size: 23px; }
+  .mcols { grid-template-columns: 1fr; }
+  .mlead { min-height: 0; padding: 20px; } .mlead .title { font-size: 26px; }
 }
 </style>
 </head>
@@ -108,40 +148,55 @@ footer .bad { color: var(--accent); }
   <div class="wrap">
     <div class="bar">
       <div>
-        <div class="logo">AI <span>Wire</span></div>
-        <div class="tagline">System design &amp; AI system design, from the engineering blogs</div>
+        <div class="brand">AI <span>Wire</span></div>
+        <div class="tagline">What's trending in AI, and how teams are building with it</div>
       </div>
       <label class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts">
+        <input id="q" type="search" placeholder="Search…" autocomplete="off" aria-label="Search">
       </label>
       <button class="icon-btn" id="theme" title="Switch light / dark" aria-label="Switch light or dark theme">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
     </div>
-    <nav class="chips" id="sources" aria-label="Filter by engineering blog"></nav>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-news" data-tab="news" aria-controls="news">AI news <b id="n-news"></b></button>
+      <button role="tab" id="tab-blogs" data-tab="blogs" aria-controls="blogs">AI engineering blogs <b id="n-blogs"></b></button>
+    </nav>
   </div>
 </header>
 
-<main class="wrap" id="feed" aria-live="polite"><div class="empty">Loading…</div></main>
+<main class="wrap">
+  <section class="panel" id="news" role="tabpanel" aria-labelledby="tab-news" aria-live="polite"><div class="empty">Loading…</div></section>
+  <section class="panel" id="blogs" role="tabpanel" aria-labelledby="tab-blogs" aria-live="polite" hidden></section>
+</main>
 <footer class="wrap" id="status"></footer>
 
 <script>
 // Two ways to run: `python server.py` (live API) or the static build from build.py (GitHub Pages).
 const STATIC = window.AIWIRE_STATIC === true;
 const NEWS_URL = STATIC ? "data/news.json" : "api/news";
+const NEWS_SHOWN = 20;
+const BLOGS_SHOWN = 12;  // 1 lead + 2 seconds + 9 in columns
 
+// Accent color per company (the lead story's tint).
 const ORG_COLORS = {
-  "Anthropic": "#d97757", "Meta": "#0866ff", "Netflix": "#e50914", "Cloudflare": "#f38020", "GitHub": "#8b949e",
-  "Airbnb": "#ff5a5f", "Dropbox": "#0061fe", "Slack": "#e01e5a", "Pinterest": "#e60023",
-  "Shopify": "#95bf47", "Spotify": "#1db954", "AWS": "#ff9900", "Databricks": "#ff3621",
-  "LangChain": "#2f8f83", "InfoQ": "#2f6fdb",
+  "Anthropic": "#d97757", "OpenAI": "#10a37f", "Google": "#4285f4", "Hugging Face": "#e6a100",
+  "Microsoft": "#7f5af0", "Meta": "#0866ff", "Netflix": "#e50914", "Cloudflare": "#f38020",
+  "GitHub": "#8b949e", "Airbnb": "#ff5a5f", "Dropbox": "#0061fe", "Slack": "#e01e5a",
+  "Pinterest": "#e60023", "Shopify": "#95bf47", "Spotify": "#1db954", "AWS": "#ff9900",
+  "Databricks": "#ff3621", "LangChain": "#2f8f83", "Simon Willison": "#a78bfa", "Hamel Husain": "#e0763a",
+  "Eugene Yan": "#f59e0b", "Lilian Weng": "#ec4899", "Latent Space": "#14b8a6",
 };
-const SECTIONS = [
-  ["system-design", "System design", "Architecture, databases, scaling, reliability and performance"],
-  ["ai", "AI system design", "Agents, RAG, evals, LLM apps, inference and serving"],
-];
-const PER_SECTION = 9;
+// News stories from these sites get the company's logo.
+const SITE_ORGS = {
+  "anthropic.com": "Anthropic", "claude.ai": "Anthropic", "claude.com": "Anthropic", "openai.com": "OpenAI",
+  "chatgpt.com": "OpenAI", "google.com": "Google", "blog.google": "Google", "deepmind.google": "Google",
+  "research.google": "Google", "huggingface.co": "Hugging Face", "microsoft.com": "Microsoft", "meta.com": "Meta",
+  "ai.meta.com": "Meta", "github.com": "GitHub", "github.blog": "GitHub", "cloudflare.com": "Cloudflare",
+  "netflixtechblog.com": "Netflix", "aws.amazon.com": "AWS", "databricks.com": "Databricks",
+  "langchain.com": "LangChain", "simonwillison.net": "Simon Willison", "latent.space": "Latent Space",
+};
 
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -150,16 +205,23 @@ const store = {
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const when = (p) => new Date(p.date || p.first_seen);
 const color = (org) => ORG_COLORS[org] || "var(--faint)";
-const sectionOf = (p) => (p.topics || []).find((t) => SECTIONS.some(([id]) => id === t)) || "system-design";
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+// Logos live in static/logos/ (see tools/fetch_logos.py); a missing one just disappears.
+const logo = (org, size = "") => org ? `<img class="logo ${size}" src="logos/${slug(org)}.png" alt="" loading="lazy" onerror="this.remove()">` : "";
+const orgForSite = (url) => { const h = hostOf(url); const k = Object.keys(SITE_ORGS).find((d) => h === d || h.endsWith("." + d)); return k && SITE_ORGS[k]; };
 
 let data = { posts: [], sources: [] };
 let org = store.get("aiwire.org", "all");
+let tab = location.hash === "#blogs" ? "blogs" : location.hash === "#news" ? "news" : store.get("aiwire.tab", "news");
 const expanded = new Set();
 const lastVisit = store.get("ainews.lastVisit", null);
 store.set("ainews.lastVisit", new Date().toISOString());
 const isNew = (p) => lastVisit && p.first_seen && new Date(p.first_seen) > new Date(lastVisit);
+const matches = (p, q) => !q || `${p.title} ${p.summary || ""} ${p.source_name}`.toLowerCase().includes(q);
+const newBadge = (p) => (isNew(p) ? '<span class="new">New</span>' : "");
 
 function ago(d) {
   const s = (Date.now() - d) / 1000;
@@ -168,90 +230,105 @@ function ago(d) {
   if (s < 86400 * 7) return `${Math.round(s / 86400)}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+const moreRow = (id, total, shown) => total > shown || expanded.has(id)
+  ? `<div class="more-row"><button class="more" data-expand="${id}">${expanded.has(id) ? "Show less" : `Show all ${total}`}</button></div>` : "";
 
-function renderSources() {
+// ---- Tab 1: AI news (Hacker News, most points first) -----------------------
+function renderNews(q) {
+  const stories = data.posts.filter((p) => p.source === "hn" && matches(p, q)).sort((a, b) => b.points - a.points);
+  const shown = q || expanded.has("news") ? stories : stories.slice(0, NEWS_SHOWN);
+  $("news").innerHTML = `<div class="sec-head"><div><h2>Trending AI news</h2>
+      <p>The most-discussed AI stories on Hacker News this week, by points</p></div></div>` +
+    (shown.length ? `<div class="trend">${shown.map((p, i) => `<div class="story"><span class="rank">${i + 1}</span><div>
+        <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <div class="meta">${logo(orgForSite(p.url), "sm")}<span class="pts">▲ ${p.points}</span><span>${esc(hostOf(p.url))}</span><span>${ago(when(p))}</span>
+          <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a>${newBadge(p)}</div></div></div>`).join("")}</div>`
+      : `<div class="empty">No stories match.</div>`) +
+    (q ? "" : moreRow("news", stories.length, NEWS_SHOWN));
+  $("n-news").textContent = data.posts.filter((p) => p.source === "hn").length;
+}
+
+// ---- Tab 2: AI engineering blogs (magazine) --------------------------------
+const postLink = (p, cls, inner) => `<a class="${cls}" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener" style="--c:${color(p.org)}">${inner}</a>`;
+const summary = (p) => (p.summary ? `<p class="summary">${esc(p.summary)}</p>` : "");
+
+function magazine(ps) {
+  const [lead, ...rest] = ps;
+  const seconds = rest.slice(0, 2), others = rest.slice(2);
+  return `<div class="mag">
+      ${postLink(lead, "mlead", `<div class="byline">${logo(lead.org, "lg")}<div><div class="kick">${esc(lead.source_name)}</div>
+        <div class="meta">${ago(when(lead))}${newBadge(lead)}</div></div></div>
+        <h3 class="title">${esc(lead.title)}</h3>${summary(lead)}`)}
+      <div class="mside">${seconds.map((p) => postLink(p, "msecond", `<div class="byline">${logo(p.org, "md")}<span class="kick">${esc(p.source_name)}</span></div>
+        <h3 class="title">${esc(p.title)}</h3>${summary(p)}<div class="meta">${ago(when(p))}${newBadge(p)}</div>`)).join("")}</div>
+    </div>
+    <div class="mcols">${others.map((p) => postLink(p, "mitem", `<div class="byline">${logo(p.org)}<span class="kick">${esc(p.org)}</span></div>
+      <h3 class="title">${esc(p.title)}</h3><div class="meta">${ago(when(p))}${newBadge(p)}</div>`)).join("")}</div>`;
+}
+
+function renderBlogs(q) {
+  const all = data.posts.filter((p) => p.source !== "hn");
+  const count = (o) => all.filter((p) => p.org === o).length;
   const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
-  const count = (o) => data.posts.filter((p) => p.org === o).length;
-  const orgs = [...new Set(data.sources.map((s) => s.org))].sort((a, b) => count(b) - count(a));
-  $("sources").innerHTML = `<button class="chip" data-org="all" aria-pressed="${org === "all"}">All blogs <b>${data.posts.length}</b></button>` +
-    orgs.map((o) => `<button class="chip${failed.has(o) ? " err" : ""}" data-org="${esc(o)}" aria-pressed="${org === o}">
-      <span class="dot" style="background:${color(o)}"></span>${esc(o)} <b>${count(o)}</b></button>`).join("");
+  const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn").map((s) => s.org))].filter(count).sort((a, b) => count(b) - count(a));
+  const posts = all.filter((p) => (org === "all" || p.org === org) && matches(p, q)).sort((a, b) => when(b) - when(a));
+  const shown = q || expanded.has("blogs") ? posts : posts.slice(0, BLOGS_SHOWN);
+  $("blogs").innerHTML = `<div class="sec-head"><div><h2>AI engineering blogs</h2>
+      <p>How teams build with AI: agents, RAG, evals, LLM apps and inference</p></div></div>
+    <nav class="chips" aria-label="Filter by company"><button class="chip all" data-org="all" aria-pressed="${org === "all"}">All <b>${all.length}</b></button>` +
+      orgs.map((o) => `<button class="chip${failed.has(o) ? " err" : ""}" data-org="${esc(o)}" aria-pressed="${org === o}">${logo(o)}${esc(o)} <b>${count(o)}</b></button>`).join("") +
+    `</nav>` + (shown.length ? magazine(shown) : `<div class="empty">No posts match.</div>`) + (q ? "" : moreRow("blogs", posts.length, BLOGS_SHOWN));
+  $("n-blogs").textContent = all.length;
 }
 
-function card(p) {
-  const d = when(p);
-  const second = (p.topics || []).filter((t) => t !== sectionOf(p) && SECTIONS.some(([id]) => id === t));
-  return `<a class="card" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener" style="--c:${color(p.org)}">
-    <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
-      <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}</div>
-    <h3 class="title">${esc(p.title)}</h3>
-    ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
-    ${second.length ? `<span class="tag">Also: ${esc(SECTIONS.find(([id]) => id === second[0])[1])}</span>` : ""}
-  </a>`;
-}
-
-function renderFeed() {
+function render() {
   const q = $("q").value.trim().toLowerCase();
-  const posts = data.posts
-    .filter((p) => (org === "all" || p.org === org))
-    .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
-    .sort((a, b) => when(b) - when(a));
-  if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet."}</div>`; return; }
-
-  const sections = SECTIONS.map(([id, label, blurb]) => ({ id, label, blurb, posts: posts.filter((p) => sectionOf(p) === id) })).filter((s) => s.posts.length);
-  $("feed").innerHTML =
-    `<nav class="cat-nav" aria-label="Jump to a section">${sections.map((s) => `<a href="#cat-${s.id}" data-jump="${s.id}">${s.label} <b>${s.posts.length}</b></a>`).join("")}</nav>` +
-    sections.map((s) => {
-      const open = q || expanded.has(s.id);
-      const shown = open ? s.posts : s.posts.slice(0, PER_SECTION);
-      return `<section class="cat" id="cat-${s.id}">
-        <div class="cat-head"><div><h2>${s.label} <span class="n">${s.posts.length}</span></h2><p>${s.blurb}</p></div>
-          ${s.posts.length > PER_SECTION && !q ? `<button class="more" data-expand="${s.id}">${open ? "Show less" : `Show all ${s.posts.length}`}</button>` : ""}</div>
-        <div class="cards">${shown.map(card).join("")}</div></section>`;
-    }).join("");
-}
-
-function renderStatus() {
+  renderNews(q); renderBlogs(q);
   const bad = data.sources.filter((s) => !s.ok);
-  $("status").innerHTML = `${data.updated ? "Updated " + ago(new Date(data.updated)) : ""} · ${data.sources.length} engineering blogs · refreshed every 30 minutes` +
+  $("status").innerHTML = `${data.updated ? "Updated " + ago(new Date(data.updated)) + " · " : ""}refreshed every 30 minutes` +
     (bad.length ? ` · <span class="bad">${bad.length} unavailable: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
 }
 
-$("sources").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-org]");
-  if (!b) return;
-  org = b.dataset.org; store.set("aiwire.org", org);
-  renderSources(); renderFeed();
-});
-$("feed").addEventListener("click", (e) => {
+function showTab(t) {
+  tab = t;
+  store.set("aiwire.tab", t);
+  for (const name of ["news", "blogs"]) {
+    $(name).hidden = name !== t;
+    $("tab-" + name).setAttribute("aria-selected", name === t);
+  }
+  history.replaceState(null, "", "#" + t);
+}
+
+document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
+document.querySelector("main").addEventListener("click", (e) => {
   const x = e.target.closest("[data-expand]");
   if (x) {
     const id = x.dataset.expand;
     expanded.has(id) ? expanded.delete(id) : expanded.add(id);
-    renderFeed();
-    if (!expanded.has(id)) $("cat-" + id)?.scrollIntoView({ block: "start" });
+    render();
+    if (!expanded.has(id)) $(id).scrollIntoView({ block: "start" });
     return;
   }
-  const j = e.target.closest("[data-jump]");
-  if (j) { e.preventDefault(); $("cat-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  const b = e.target.closest("[data-org]");
+  if (b) { org = b.dataset.org; store.set("aiwire.org", org); render(); }
 });
-$("q").addEventListener("input", renderFeed);
+$("q").addEventListener("input", render);
 $("theme").addEventListener("click", () => {
-  const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#17150f";
+  const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#151515";
   document.documentElement.dataset.theme = dark ? "light" : "dark";
   store.set("aiwire.theme", document.documentElement.dataset.theme);
 });
-document.documentElement.dataset.theme = store.get("aiwire.theme", "dark");
+document.documentElement.dataset.theme = store.get("aiwire.theme", "light");
+showTab(tab);
 
 async function load() {
   const res = await fetch(NEWS_URL, { cache: "no-cache" });
   if (!res.ok) throw new Error(res.status);
   data = await res.json();
-  data.posts = data.posts.filter((p) => p.group === "engineering");
   if (org !== "all" && !data.posts.some((p) => p.org === org)) org = "all";
-  renderSources(); renderFeed(); renderStatus();
+  render();
 }
-load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't load the posts. Try reloading the page.</div>`; });
+load().catch(() => { $("news").innerHTML = `<div class="empty">Couldn't load the news. Try reloading the page.</div>`; });
 setInterval(() => load().catch(() => {}), 5 * 60 * 1000);
 </script>
 </body>

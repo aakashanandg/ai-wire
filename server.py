@@ -25,7 +25,6 @@ from pathlib import Path
 import editions
 import progress
 import scraper
-import topics
 
 STATIC = Path(__file__).parent / "static"
 lock = threading.Lock()
@@ -66,8 +65,6 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_error(400, "end must be YYYY-MM-DD")
         if path == "/api/progress":
             return self.send_json(progress.summary())
-        if path == "/api/topics":
-            return self.send_json(topics.LABELS)
         if path == "/api/editions":
             return self.send_json(editions.index())
         if path.startswith("/api/editions/"):

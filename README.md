@@ -1,12 +1,17 @@
 # AI Wire
 
-One page of **system design** and **AI system design** deep dives from company engineering blogs. It keeps only technical write-ups (no launches, customer stories or company news), sorts them into two sections, and updates every 30 minutes.
+What's trending in AI, and how teams are building with it. Two tabs, updated every 30 minutes:
+
+- **AI news**: the week's most-upvoted AI stories on Hacker News, ranked by points.
+- **AI engineering blogs**: technical write-ups on building with AI (agents, RAG, evals, LLM apps, inference) in a magazine layout, with company logos and a filter per company. Launches, customer stories and company news are filtered out.
 
 **Live:** https://aakashanandg.github.io/ai-wire/
 
-**The page:** cards in two sections, *System design* and *AI system design*, newest first. Filter by blog, search, and switch between dark and light. At most 12 posts per blog, so no single company dominates.
-
-**Blogs (15):** Anthropic Engineering, Engineering at Meta, Netflix TechBlog, Cloudflare, GitHub Engineering, Airbnb Engineering, Dropbox Tech, Slack Engineering, Pinterest Engineering, Shopify Engineering, Spotify Engineering, AWS Architecture Blog, Databricks, LangChain, InfoQ Architecture.
+**Sources (25)**
+- *AI labs:* Anthropic Engineering, OpenAI, Google DeepMind, Google Research, Hugging Face, Microsoft Research
+- *Company engineering blogs (AI posts only):* Meta, Netflix, Cloudflare, GitHub, Airbnb, Dropbox, Slack, Pinterest, Shopify, Spotify, AWS Architecture, Databricks, LangChain
+- *Engineers:* Simon Willison, Hamel Husain, Eugene Yan, Lilian Weng, Latent Space
+- *Trending:* Hacker News
 
 ## Run
 
@@ -36,12 +41,13 @@ To try the static build locally: `python build.py && python -m http.server -d si
 |---|---|
 | `sources.py` | The list of sources. Add one by adding an entry. |
 | `scraper.py` | Fetches all sources in parallel, normalizes posts to `{title, url, date, summary, source}`, and writes `data/news.json`. |
-| `topics.py` | Tags each post with its track (system design / AI system design), decides whether it's a deep dive, and filters out announcements, customer stories and news. Only on-topic deep dives are kept. |
+| `topics.py` | Decides what's kept: AI stories from Hacker News, and AI engineering deep dives from the blogs (no announcements, customer stories or company news). |
 | `progress.py` | Reading-progress API used by earlier versions of the page (bookmarks, read marks); not used by the current page. |
 | `editions.py` | Files each post under the day it was published (one file per day in `data/editions/`), a growing archive that earlier versions showed as a week timeline. Files are only added to, so past weeks stay complete after posts drop off the source feeds. Hacker News history starts from your first run, because its search only looks back 7 days. |
 | `build.py` | Builds the static site for GitHub Pages (`site/`), and restores the previous run's data from the live site. |
 | `server.py` | Serves the page and `/api/news`, and refreshes in the background. Python standard library only. |
-| `static/index.html` | The page: one file, plain JavaScript. Colors follow [The Daily Diff](https://tdd.cat/) (dark by default, light available); fonts are Source Serif 4 and DM Sans. |
+| `static/logos/` | Company logos, stored in the repo so visitors' browsers never contact a third party. Fetch new ones with `python tools/fetch_logos.py`. |
+| `static/index.html` | The page: one file, plain JavaScript. Two tabs (`#news`, `#blogs`). Colors match Claude's light and dark themes (light by default). Claude's own fonts (Anthropic Serif and Sans) aren't licensed for other sites, so it uses the closest free ones: Source Serif 4 and Inter. |
 
 Three kinds of source:
 
@@ -54,11 +60,11 @@ A source that fails (site down, layout changed) doesn't break the page: its prev
 ## Tuning what gets in
 
 Everything is keyword rules in `topics.py`:
-- **`TOPICS`**: the words that put a post in *System design* or *AI system design*. A post needs one in its title, or two in its summary.
-- **`ANNOUNCEMENT`**: launches, events and roundups, dropped from every source.
-- **`MARKETING`** and **`CUSTOMER`**: customer stories and product updates ("X boosts productivity 30% with Y"), dropped from mixed blogs such as the AI labs.
+- **`AI_WORDS`**: a post must mention one of these (in the title, or twice in the summary). AI lab posts need one of the **`ENGINEERING_WORDS`** in the title, so "Reimagining advertising with AI" stays out.
+- **`ANNOUNCEMENT`**: launches, events and roundups, dropped from every blog.
+- **`MARKETING`** and **`CUSTOMER`**: customer stories and product updates, dropped from mixed blogs (labs, vendors, company blogs).
 
-Sources marked `"focused": True` in `sources.py` publish almost nothing but deep dives, so their posts only need to match a track. Run `python scraper.py` to re-tag everything; the daily archive is re-checked against the rules on every update.
+Blogs marked `"focused": True` in `sources.py` write almost only about AI engineering, so any AI post of theirs is kept. Each blog is capped at 12 posts (`MAX_PER_SOURCE` in `scraper.py`). Run `python scraper.py` to re-tag everything.
 
 ## Adding a source
 
@@ -71,7 +77,7 @@ Sources marked `"focused": True` in `sources.py` publish almost nothing but deep
  "url": "https://x.ai/news", "link_pattern": r"^/news/[\w-]+$"},
 ```
 
-Run `python scraper.py` to check that it returns posts with dates.
+Run `python scraper.py` to check that it returns posts with dates, and `python tools/fetch_logos.py` to download the new company's logo (add its website to `DOMAINS` first).
 
 ## Being a good citizen
 

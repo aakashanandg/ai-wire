@@ -212,7 +212,7 @@ def scrape_source(src: dict) -> tuple[dict, list[dict]]:
         p.update(source=src["id"], source_name=src["name"], org=src["org"], group=src["group"])
         classify(p, src)
     # Keep only system design and AI system design (see topics.is_focused).
-    posts = [p for p in posts if is_focused(p)][:MAX_PER_SOURCE]
+    posts = [p for p in posts if is_focused(p)][: src.get("max_posts", MAX_PER_SOURCE)]
     status.update(fetched=fetched, count=len(posts), undated=sum(1 for p in posts if not p["date"]),
                   seconds=round(time.time() - start, 1))
     return status, posts

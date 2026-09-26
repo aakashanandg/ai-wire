@@ -9,6 +9,7 @@ seen" times and the archive growing without committing data to the repo.
 
 Output (site/):
     index.html                        the page, switched to static mode
+    logos/                            company logos
     data/news.json                    latest posts from every source
     data/editions/index.json          list of days in the archive
     data/editions/YYYY-MM-DD.json     one day's posts (used by "This week")
@@ -80,6 +81,7 @@ def build():
     html = (ROOT / "static" / "index.html").read_text()
     html = html.replace("</head>", "<script>window.AIWIRE_STATIC = true;</script>\n</head>", 1)
     (SITE / "index.html").write_text(html)
+    shutil.copytree(ROOT / "static" / "logos", SITE / "logos")  # company logos (tools/fetch_logos.py)
 
     write(SITE / "data" / "news.json", data)
     index = editions.index()
