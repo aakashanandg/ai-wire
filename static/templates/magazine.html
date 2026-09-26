@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Wire Magazine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #eef0f4; --card: #ffffff; --text: #0f172a; --muted: #64748b; --line: #dde1e8; --pill: #e2e8f0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0b0d12; --card: #151821; --text: #e8ebf2; --muted: #8a93a6; --line: #242936; --pill: #1f2430; }
+}
+:root[data-theme="dark"] { --bg: #0b0d12; --card: #151821; --text: #e8ebf2; --muted: #8a93a6; --line: #242936; --pill: #1f2430; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, sans-serif; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px 64px; }
+header { display: flex; align-items: center; gap: 16px; padding: 28px 0 20px; flex-wrap: wrap; }
+h1 { font: 700 34px/1 "Space Grotesk", sans-serif; margin: 0; letter-spacing: -0.03em; }
+h1 i { font-style: normal; background: linear-gradient(90deg, #d97757, #7f5af0, #10a37f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.date { color: var(--muted); font-size: 14px; }
+input { margin-left: auto; height: 40px; width: 260px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 0 16px; font: inherit; }
+.pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; }
+.pill { flex: none; border: 0; border-radius: 999px; padding: 7px 14px; background: var(--pill); color: var(--muted); font: 500 13px Inter, sans-serif; cursor: pointer; }
+.pill[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.card { background: var(--card); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); position: relative; overflow: hidden; transition: transform .15s, box-shadow .15s; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -12px rgba(0,0,0,.25); }
+.card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--c); }
+.card .org { font: 500 12px Inter; color: var(--c); display: flex; justify-content: space-between; }
+.card .org span:last-child { color: var(--muted); }
+.card h3 { font: 700 18px/1.25 "Space Grotesk", sans-serif; margin: 0; letter-spacing: -0.01em; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card.hero { grid-column: span 2; grid-row: span 2; padding: 32px; justify-content: flex-end; min-height: 340px;
+  background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--c) 35%, transparent), transparent 60%), var(--card); }
+.card.hero h3 { font-size: 34px; }
+.card.hero p { -webkit-line-clamp: 4; font-size: 16px; }
+.card.hn { --c: #ff6600; }
+.card.hn .pts { font: 700 28px "Space Grotesk"; color: var(--c); }
+.new { position: absolute; top: 14px; right: 14px; font: 600 10px Inter; letter-spacing: .06em; background: var(--c); color: #fff; padding: 2px 7px; border-radius: 999px; }
+.card.hero .new { top: 20px; right: 20px; }
+h2 { font: 700 20px "Space Grotesk"; margin: 40px 0 16px; }
+@media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) {
+  .wrap { padding: 0 16px 40px; } .grid { grid-template-columns: 1fr; }
+  .card.hero { grid-column: auto; min-height: 260px; padding: 24px; } .card.hero h3 { font-size: 26px; }
+  input { width: 100%; margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI <i>Wire</i></h1>
+    <span class="date" id="date"></span>
+    <input id="q" type="search" placeholder="Search" aria-label="Search">
+  </header>
+  <nav class="pills" id="pills"></nav>
+  <div class="grid" id="grid"></div>
+  <h2>Hot on Hacker News</h2>
+  <div class="grid" id="hn"></div>
+</div>
+<script src="common.js"></script>
+<script>
+const { esc, safeUrl, when, isNew, color, host, ago, load, matches, store } = AIW;
+let data, org = "all";
+document.getElementById("date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+function card(p, hero) {
+  return `<a class="card${hero ? " hero" : ""}" style="--c:${color(p.org)}" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+    ${isNew(p) ? '<span class="new">NEW</span>' : ""}
+    <div class="org"><span>${esc(p.source_name)}</span><span>${ago(when(p))}</span></div>
+    <h3>${esc(p.title)}</h3>${p.summary ? `<p>${esc(p.summary)}</p>` : ""}</a>`;
+}
+
+function render() {
+  const q = document.getElementById("q").value;
+  document.getElementById("pills").innerHTML = ["all", ...data.orgs].map((o) =>
+    `<button class="pill" data-o="${esc(o)}" aria-pressed="${org === o}">${o === "all" ? "Everything" : esc(o)}</button>`).join("");
+  const posts = data.labs.filter((p) => (org === "all" || p.org === org) && matches(p, q)).slice(0, 60);
+  document.getElementById("grid").innerHTML = posts.map((p, i) => card(p, i === 0)).join("") || `<p>No posts match.</p>`;
+  document.getElementById("hn").innerHTML = data.hn.filter((p) => matches(p, q)).slice(0, 8).map((p) =>
+    `<a class="card hn" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+      <div class="pts">${p.points}</div><h3>${esc(p.title)}</h3>
+      <div class="org"><span>${esc(host(p.url))}</span><span>${p.comments} comments</span></div></a>`).join("");
+}
+document.getElementById("pills").addEventListener("click", (e) => { const b = e.target.closest("[data-o]"); if (b) { org = b.dataset.o; render(); } });
+document.getElementById("q").addEventListener("input", render);
+if (store.get("ainews.theme", null)) document.documentElement.dataset.theme = store.get("ainews.theme");
+load().then((d) => { data = d; render(); });
+</script>
+</body>
+</html>

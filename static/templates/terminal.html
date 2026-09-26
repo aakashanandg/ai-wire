@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Wire Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #f4f1e8; --text: #1f1d18; --muted: #7a7466; --line: #d9d3c3; --hi: #b45309; --sel: #ebe4d0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0c0e0c; --text: #d7e0d2; --muted: #6f7a6b; --line: #1f261e; --hi: #7ee787; --sel: #152015; }
+}
+:root[data-theme="dark"] { --bg: #0c0e0c; --text: #d7e0d2; --muted: #6f7a6b; --line: #1f261e; --hi: #7ee787; --sel: #152015; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 13.5px/1.55 "JetBrains Mono", ui-monospace, Menlo, monospace; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
+header { padding: 18px 0 10px; border-bottom: 1px dashed var(--line); display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; }
+.brand { color: var(--hi); font-weight: 600; }
+.brand::before { content: "$ "; color: var(--muted); }
+.tabs { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.tabs button { background: none; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
+.tabs button[aria-pressed="true"] { color: var(--text); text-decoration: underline; text-underline-offset: 4px; }
+.tabs button:hover { color: var(--text); }
+.prompt { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.prompt input { background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--text); font: inherit; width: 180px; outline: none; }
+.prompt input:focus { border-color: var(--hi); }
+ol { list-style: none; margin: 0; padding: 0; counter-reset: n; }
+li { counter-increment: n; display: grid; grid-template-columns: 3.2em 1fr; gap: 0 8px; padding: 7px 8px; border-radius: 4px; }
+li::before { content: counter(n) "."; color: var(--muted); text-align: right; }
+li.sel { background: var(--sel); }
+li .t:hover, li.sel .t { color: var(--hi); }
+.sub { grid-column: 2; color: var(--muted); font-size: 12px; }
+.sub a:hover { text-decoration: underline; }
+.tag { color: var(--hi); }
+.new { color: var(--bg); background: var(--hi); padding: 0 4px; font-size: 11px; margin-left: 6px; }
+.help { color: var(--muted); font-size: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); margin-bottom: 8px; }
+kbd { border: 1px solid var(--line); padding: 0 4px; border-radius: 3px; font: inherit; }
+@media (max-width: 600px) { .wrap { padding: 0 12px 40px; } .prompt { margin-left: 0; width: 100%; } .prompt input { flex: 1; } .help { display: none; } li { grid-template-columns: 2.4em 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="brand">ai-wire</span>
+    <nav class="tabs" id="tabs"></nav>
+    <label class="prompt">grep <input id="q" type="search" aria-label="Search" autocomplete="off"></label>
+  </header>
+  <div class="help"><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>o</kbd> open · <kbd>/</kbd> search · <kbd>r</kbd> refresh · <kbd>t</kbd> theme</div>
+  <ol id="list"></ol>
+</div>
+<script src="common.js"></script>
+<script>
+const { esc, safeUrl, when, isNew, host, ago, load, matches, store } = AIW;
+let data, tab = "all", sel = 0, items = [];
+
+function render() {
+  const tabs = [["all", "all"], ["hn", "hn"], ...data.orgs.map((o) => [o, o.toLowerCase().replace(/\s+/g, "-")])];
+  document.getElementById("tabs").innerHTML = tabs.map(([k, l]) => `<button data-t="${esc(k)}" aria-pressed="${tab === k}">${esc(l)}</button>`).join("");
+  const q = document.getElementById("q").value;
+  const pool = tab === "hn" ? data.hn : tab === "all" ? [...data.labs, ...data.hn].sort((a, b) => when(b) - when(a)) : data.labs.filter((p) => p.org === tab);
+  items = pool.filter((p) => matches(p, q));
+  sel = Math.min(sel, Math.max(0, items.length - 1));
+  document.getElementById("list").innerHTML = items.map((p, i) => {
+    const hn = p.source === "hn";
+    return `<li class="${i === sel ? "sel" : ""}"><a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
+      <div class="sub"><span class="tag">[${esc(hn ? "hn" : p.org.toLowerCase())}]</span> ${esc(host(p.url))} · ${ago(when(p))}${hn ? ` · ${p.points} pts · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a>` : ""}${isNew(p) ? '<span class="new">NEW</span>' : ""}</div></li>`;
+  }).join("") || `<li>no matches</li>`;
+}
+
+document.getElementById("tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-t]"); if (b) { tab = b.dataset.t; sel = 0; render(); } });
+document.getElementById("q").addEventListener("input", () => { sel = 0; render(); });
+document.addEventListener("keydown", async (e) => {
+  if (e.target.tagName === "INPUT") { if (e.key === "Escape") e.target.blur(); return; }
+  if (e.key === "j" || e.key === "k") {
+    sel = Math.max(0, Math.min(items.length - 1, sel + (e.key === "j" ? 1 : -1)));
+    render(); document.querySelector("li.sel")?.scrollIntoView({ block: "nearest" });
+  } else if (e.key === "o" || e.key === "Enter") { if (items[sel]) window.open(safeUrl(items[sel].url), "_blank", "noopener"); }
+  else if (e.key === "/") { e.preventDefault(); document.getElementById("q").focus(); }
+  else if (e.key === "r") { data = await load(true); render(); }
+  else if (e.key === "t") {
+    const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#0c0e0c";
+    document.documentElement.dataset.theme = dark ? "light" : "dark"; store.set("ainews.theme", document.documentElement.dataset.theme);
+  }
+});
+if (store.get("ainews.theme", null)) document.documentElement.dataset.theme = store.get("ainews.theme");
+load().then((d) => { data = d; render(); });
+</script>
+</body>
+</html>

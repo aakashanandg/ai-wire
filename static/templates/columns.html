@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Wire Columns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #e9ebef; --col: #f7f8fa; --item: #ffffff; --text: #111318; --muted: #6a7080; --line: #dcdfe5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e1014; --col: #15181e; --item: #1b1f27; --text: #e6e8ee; --muted: #8b92a3; --line: #262b35; }
+}
+:root[data-theme="dark"] { --bg: #0e1014; --col: #15181e; --item: #1b1f27; --text: #e6e8ee; --muted: #8b92a3; --line: #262b35; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 13.5px/1.45 Inter, system-ui, sans-serif; display: flex; flex-direction: column; }
+a { color: inherit; text-decoration: none; }
+header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--col); }
+header b { font-size: 15px; }
+header .stat { color: var(--muted); font-size: 12px; }
+header input { margin-left: auto; height: 32px; width: 240px; border-radius: 8px; border: 1px solid var(--line); background: var(--item); color: var(--text); padding: 0 10px; font: inherit; }
+.board { flex: 1; display: flex; gap: 10px; padding: 10px; overflow-x: auto; min-height: 0; scroll-snap-type: x mandatory; }
+.col { flex: 0 0 320px; background: var(--col); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; scroll-snap-align: start; }
+.col h2 { margin: 0; padding: 12px 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.col h2 .sw { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.col h2 .n { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12px; }
+.col h2 .fresh { background: var(--c); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 999px; }
+.items { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.it { background: var(--item); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; border-left: 3px solid transparent; }
+.it:hover { border-left-color: var(--c); }
+.it.new { border-left-color: var(--c); }
+.it .t { font-weight: 500; }
+.it .m { color: var(--muted); font-size: 12px; margin-top: 4px; display: flex; gap: 6px; }
+.it .m .src { margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) {
+  header input { width: 100%; margin-left: 0; } header { flex-wrap: wrap; }
+  .col { flex-basis: calc(100vw - 32px); }
+}
+</style>
+</head>
+<body>
+<header>
+  <b>AI Wire</b><span class="stat" id="stat"></span>
+  <input id="q" type="search" placeholder="Filter all columns…" aria-label="Filter">
+</header>
+<main class="board" id="board"></main>
+<script src="common.js"></script>
+<script>
+const { esc, safeUrl, when, isNew, color, host, ago, load, matches, store } = AIW;
+let data;
+
+function column(title, c, posts, hn) {
+  const fresh = posts.filter((p) => Date.now() - when(p) < 86400000 * 2).length;
+  return `<section class="col" style="--c:${c}">
+    <h2><span class="sw"></span>${esc(title)}${fresh ? `<span class="fresh">${fresh} new</span>` : ""}<span class="n">${posts.length}</span></h2>
+    <div class="items">${posts.map((p) => `<a class="it${isNew(p) ? " new" : ""}" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+      <div class="t">${esc(p.title)}</div>
+      <div class="m"><span class="src">${esc(hn ? host(p.url) : p.source_name)}</span>${hn ? `<span>▲ ${p.points}</span><span>💬 ${p.comments}</span>` : ""}<span>${ago(when(p))}</span></div></a>`).join("")
+      || `<div class="it"><div class="m">Nothing here.</div></div>`}</div></section>`;
+}
+
+function render() {
+  const q = document.getElementById("q").value;
+  const cols = [column("Hacker News", color("Hacker News"), data.hn.filter((p) => matches(p, q)), true)];
+  // Busiest labs first, by posts in the last 30 days.
+  const recent = (o) => data.labs.filter((p) => p.org === o && Date.now() - when(p) < 30 * 86400000).length;
+  for (const o of [...data.orgs].sort((a, b) => recent(b) - recent(a)))
+    cols.push(column(o, color(o), data.labs.filter((p) => p.org === o && matches(p, q))));
+  document.getElementById("board").innerHTML = cols.join("");
+  document.getElementById("stat").textContent = `${data.posts.length} posts · updated ${ago(new Date(data.updated))} ago`;
+}
+document.getElementById("q").addEventListener("input", render);
+if (store.get("ainews.theme", null)) document.documentElement.dataset.theme = store.get("ainews.theme");
+load().then((d) => { data = d; render(); });
+</script>
+</body>
+</html>
