@@ -1,6 +1,6 @@
 # AI Wire
 
-The latest posts from AI lab blogs and AI stories on Hacker News, as a **daily edition** you can read like a newsletter, or as a **live feed**.
+The latest posts from AI lab blogs and AI stories on Hacker News, as a live **Feed** or a **This week** timeline.
 
 **Sources:** Anthropic (Engineering + News), OpenAI, Google DeepMind, Google Research, Meta AI, Mistral, Hugging Face, NVIDIA, Microsoft Research, Berkeley AI Research, Hacker News.
 
@@ -20,9 +20,9 @@ Dates follow this computer's time zone. The server scrapes all sources at startu
 |---|---|
 | `sources.py` | The list of sources. Add one by adding an entry. |
 | `scraper.py` | Fetches all sources in parallel, normalizes posts to `{title, url, date, summary, source}`, and writes `data/news.json`. |
-| `editions.py` | Files each post under the day it was published and saves one edition per day in `data/editions/`. Editions are only added to, so old days stay complete after posts drop off the source feeds. |
+| `editions.py` | Files each post under the day it was published (one file per day in `data/editions/`) and builds the week view. Files are only added to, so past weeks stay complete after posts drop off the source feeds. Hacker News history starts from your first run, because its search only looks back 7 days. |
 | `server.py` | Serves the page and `/api/news`, and refreshes in the background. Python standard library only. |
-| `static/index.html` | The page. **Daily edition** (default): one day at a time with top Hacker News stories then posts grouped by lab; use ← → or the date menu to move between days, and share a day with a link like `/#2026-09-22`. **Live feed**: everything newest first, with lab filters and search. Dark mode by default. |
+| `static/index.html` | The page, dark mode by default. **Feed** (default): everything newest first, with lab filters, search and the latest Hacker News stories. **This week**: a 7-day strip showing how busy each day was, the week's biggest stories, then a day-by-day timeline of every lab post plus each day's top 3 Hacker News stories. Browse older weeks with ← →, or link to one like `/#week-2026-09-19`. |
 
 Three kinds of source:
 

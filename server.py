@@ -8,6 +8,7 @@ Endpoints:
     GET  /api/news      all posts + source status (JSON)
     GET  /api/editions  list of daily editions, newest first
     GET  /api/editions/YYYY-MM-DD   one daily edition
+    GET  /api/week?end=YYYY-MM-DD   seven days ending on that date (default today)
     POST /api/refresh   scrape now (returns when done)
 """
 
@@ -15,6 +16,7 @@ import argparse
 import json
 import threading
 import time
+import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -49,9 +51,15 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(STATIC), **kwargs)
 
     def do_GET(self):
-        path = self.path.split("?")[0]
+        path, _, query = self.path.partition("?")
         if path == "/api/news":
             return self.send_json(scraper.load() or {"updated": None, "sources": [], "posts": []})
+        if path == "/api/week":
+            end = urllib.parse.parse_qs(query).get("end", [None])[0]
+            try:
+                return self.send_json(editions.week(end))
+            except ValueError:
+                return self.send_error(400, "end must be YYYY-MM-DD")
         if path == "/api/editions":
             return self.send_json(editions.index())
         if path.startswith("/api/editions/"):

@@ -75,6 +75,27 @@ def get(day: str) -> dict | None:
     }
 
 
+def week(end: str | None = None) -> dict:
+    """Seven days ending on `end` (default today), newest first, with the week's biggest stories."""
+    end_day = date.fromisoformat(end) if end else date.today()
+    end_day = min(end_day, date.today())
+    days = [(end_day - timedelta(days=i)).isoformat() for i in range(7)]
+    editions = [get(d) or {"date": d, "labs": [], "hn": [], "counts": {"labs": 0, "orgs": 0, "hn": 0}} for d in days]
+
+    # The week's top stories: every HN story of the week, ranked by points.
+    top = sorted((p for e in editions for p in e["hn"]), key=lambda p: p.get("points", 0), reverse=True)[:5]
+    oldest_saved = min((p.stem for p in EDITIONS_DIR.glob("*.json")), default=days[-1])
+    return {
+        "start": days[-1],
+        "end": days[0],
+        "days": editions,
+        "top": top,
+        "counts": {k: sum(e["counts"][k] for e in editions) for k in ("labs", "hn")},
+        "older": (end_day - timedelta(days=7)).isoformat() if oldest_saved < days[-1] else None,
+        "newer": (end_day + timedelta(days=7)).isoformat() if end_day < date.today() else None,
+    }
+
+
 def index() -> list[dict]:
     """Every edition, newest first, with post counts (for the archive list)."""
     out = []
