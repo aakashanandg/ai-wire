@@ -150,8 +150,8 @@ footer .bad { color: var(--accent); }
     <section id="feed" aria-live="polite"><div class="empty">Loading…</div></section>
     <aside>
       <div class="rail">
-        <h3><span class="y">Y</span> Trending on Hacker News</h3>
-        <p class="sub">AI stories from the last 7 days, by points</p>
+        <h3><span class="y">Y</span> Latest on Hacker News</h3>
+        <p class="sub">Newest AI stories with 40+ points</p>
         <div id="hn"></div>
       </div>
     </aside>
@@ -180,6 +180,8 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const when = (p) => new Date(p.date || p.first_seen);
 const isNew = (p) => lastVisit && new Date(p.first_seen) > new Date(lastVisit);
+// Newest first; posts with the same timestamp keep the order we first saw them in.
+const newestFirst = (a, b) => when(b) - when(a) || new Date(b.first_seen) - new Date(a.first_seen);
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
 
 function ago(d) {
@@ -219,7 +221,7 @@ function renderFeed() {
   const q = $("q").value.trim().toLowerCase();
   const posts = data.posts
     .filter((p) => p.source !== "hn" && (active === "all" || p.org === active) && matches(p, q))
-    .sort((a, b) => when(b) - when(a));
+    .sort(newestFirst);
 
   if (!posts.length) {
     $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`;
@@ -243,7 +245,7 @@ function renderFeed() {
 function renderHN() {
   const q = $("q").value.trim().toLowerCase();
   const items = data.posts.filter((p) => p.source === "hn" && matches(p, q))
-    .sort((a, b) => b.points - a.points).slice(0, 15);
+    .sort(newestFirst).slice(0, 15);
   $("hn").innerHTML = items.length ? items.map((p) => {
     let host = "";
     try { host = new URL(p.url).hostname.replace(/^www\./, ""); } catch {}

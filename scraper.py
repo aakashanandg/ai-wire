@@ -56,6 +56,11 @@ def to_iso(value) -> str | None:
         return None
 
 
+def day_to_iso(day: str) -> str | None:
+    """A date with no time ("Sep 23, 2026"): use midday UTC so it shows as the same day in every time zone."""
+    return to_iso(f"{day} 12:00")
+
+
 def clean(text: str | None, limit: int = 280) -> str:
     if not text:
         return ""
@@ -117,7 +122,7 @@ def scrape_html(src: dict) -> list[dict]:
         node = a
         for _ in range(5):
             if m := DATE_RE.search(node.get_text(" ", strip=True)):
-                post["date"] = post["date"] or to_iso(m.group(0))
+                post["date"] = post["date"] or day_to_iso(m.group(0))
                 break
             parent = node.parent
             if parent is None or any(article_url(x) not in (None, url) for x in parent.find_all("a", href=True)):
@@ -153,7 +158,7 @@ def article_date(url: str) -> str | None:
             return d
     main = soup.find("main") or soup.body or soup
     m = DATE_RE.search(main.get_text(" ", strip=True))
-    return to_iso(m.group(0)) if m else None
+    return day_to_iso(m.group(0)) if m else None
 
 
 def scrape_hn(src: dict) -> list[dict]:
