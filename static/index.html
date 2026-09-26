@@ -6,135 +6,133 @@
 <title>AI Wire</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
+/* Palette after tdd.cat (The Daily Diff): newsprint cream + oxblood, or warm charcoal + amber. */
 :root {
-  --bg: #f7f6f2;
-  --surface: #ffffff;
-  --text: #1c1b18;
-  --muted: #6b675e;
-  --faint: #9b968b;
-  --line: #e6e2d8;
-  --accent: #c2410c;
-  --accent-soft: #fdebe0;
-  --chip: #efece4;
-  --hn: #e46a14;
+  --bg: #f8f4e8; --surface: #fffdf6; --surface-2: #efe8d4;
+  --text: #1b1a17; --muted: #45423a; --faint: #7c7563;
+  --line: rgba(32, 30, 25, .14); --rule: #201e19;
+  --accent: #8a1f11; --accent-soft: rgba(138, 31, 17, .08); --on-accent: #f8f4e8;
+  --good: #3d6b35;
+  --serif: "Source Serif 4", Georgia, serif;
+  --sans: "DM Sans", system-ui, -apple-system, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141412; --surface: #1c1c19; --text: #ecebe6; --muted: #a29e93; --faint: #75716a;
-    --line: #2d2c28; --accent: #fb923c; --accent-soft: #3a2415; --chip: #262622; --hn: #fb923c;
+    --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
+    --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
+    --line: rgba(217, 208, 189, .12); --rule: #b0a790;
+    --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14); --on-accent: #17150f;
+    --good: #9cbf7a;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141412; --surface: #1c1c19; --text: #ecebe6; --muted: #a29e93; --faint: #75716a;
-  --line: #2d2c28; --accent: #fb923c; --accent-soft: #3a2415; --chip: #262622; --hn: #fb923c;
+  --bg: #17150f; --surface: #221f19; --surface-2: #2a2520;
+  --text: #d9d0bd; --muted: #b0a790; --faint: #7f7663;
+  --line: rgba(217, 208, 189, .12); --rule: #b0a790;
+  --accent: #cc9a56; --accent-soft: rgba(204, 154, 86, .14); --on-accent: #17150f;
+  --good: #9cbf7a;
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 15px/1.5 Inter, system-ui, -apple-system, sans-serif;
-}
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
-
+::selection { background: var(--accent-soft); }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-/* Header */
-header { border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 10; }
-.bar { display: flex; align-items: center; gap: 16px; height: 64px; }
-.logo { font-family: Newsreader, Georgia, serif; font-weight: 600; font-size: 26px; letter-spacing: -0.01em; white-space: nowrap; }
+/* Header: a newspaper masthead with a double rule underneath */
+header { background: var(--bg); position: sticky; top: 0; z-index: 10; border-bottom: 3px double var(--rule); }
+.bar { display: flex; align-items: center; gap: 14px; height: 64px; }
+.logo { font: 700 27px/1 var(--serif); letter-spacing: -0.015em; white-space: nowrap; }
 .logo span { color: var(--accent); }
-.search { flex: 1; max-width: 420px; margin-left: auto; position: relative; }
-.search input {
-  width: 100%; height: 38px; padding: 0 12px 0 34px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit;
-}
+.views { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 2px; background: var(--surface); }
+.views button { border: 0; background: none; border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.views button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.search { flex: 1; max-width: 360px; margin-left: auto; position: relative; }
+.search input { width: 100%; height: 36px; padding: 0 12px 0 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
 .search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-.search svg { position: absolute; left: 11px; top: 11px; color: var(--faint); }
-.icon-btn {
-  height: 38px; min-width: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
-  background: var(--surface); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  font-size: 13px; color: var(--muted);
-}
+.search svg { position: absolute; left: 11px; top: 10px; color: var(--faint); }
+.icon-btn { height: 36px; min-width: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .icon-btn:hover { color: var(--text); }
-.spin svg { animation: spin 0.9s linear infinite; }
+#refresh { margin-left: auto; }
+body[data-view="live"] #refresh { margin-left: 0; }  /* the search box takes the free space instead */
+.spin svg { animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Filters */
-.filters { display: flex; gap: 8px; padding: 14px 0; overflow-x: auto; scrollbar-width: none; }
-.filters::-webkit-scrollbar { display: none; }
-.chip {
-  flex: none; border: 1px solid transparent; background: var(--chip); border-radius: 999px;
-  padding: 5px 12px; font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center;
-}
-.chip b { font-weight: 500; color: var(--faint); font-size: 12px; }
-.chip[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+body[data-view="live"] .week-only, body[data-view="live"] .learn-only,
+body[data-view="week"] .live-only, body[data-view="week"] .learn-only,
+body[data-view="learn"] .live-only, body[data-view="learn"] .week-only { display: none !important; }
+
+/* Chips */
+.filters { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; align-items: center; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.chip b { font-weight: 500; color: var(--faint); font-size: 11.5px; }
+.chip:hover { color: var(--text); }
+.chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
 .chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
+.chip.group { font-weight: 600; font-size: 13px; }
 .chip.err { text-decoration: line-through; opacity: .6; }
+.toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); flex: none; cursor: pointer; margin-left: auto; padding-left: 12px; }
+.toggle input { accent-color: var(--accent); }
 
-/* Layout */
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 48px; padding: 8px 0 64px; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 32px; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; letter-spacing: .02em; }
+.tag { font-size: 11px; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
+.tag.dd { color: var(--accent); border-color: transparent; background: var(--accent-soft); }
 
-h2.day {
-  font: 600 12px/1 Inter, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--faint);
-  margin: 28px 0 4px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
-}
+/* Feed */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 48px; padding: 4px 0 64px; }
+h2.day { font: 600 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .12em; color: var(--faint); margin: 28px 0 4px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
 h2.day:first-child { margin-top: 8px; }
-
-.post { display: block; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.post:hover .title { color: var(--accent); }
-.meta { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 11px; padding: 1px 7px; border-radius: 999px; }
-.title { font-family: Newsreader, Georgia, serif; font-size: 20px; line-height: 1.3; font-weight: 500; margin: 0; transition: color .15s; }
+.post { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.meta { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; flex-wrap: wrap; }
+.title { font: 600 20px/1.3 var(--serif); margin: 0; letter-spacing: -0.005em; }
+.post a:hover .title { color: var(--accent); }
 .summary { color: var(--muted); font-size: 14px; margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.acts { display: flex; flex-direction: column; gap: 4px; padding-top: 2px; }
+.act { width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--faint); display: grid; place-items: center; }
+.act:hover { color: var(--text); border-color: var(--line); background: var(--surface); }
+.act[aria-pressed="true"] { color: var(--accent); }
+.act.read[aria-pressed="true"] { color: var(--good); }
+.is-read .title { color: var(--faint); }
 
-/* HN rail */
-aside { align-self: start; position: sticky; top: 88px; }
-@media (max-width: 900px) {
-  aside { position: static; order: -1; }        /* HN first on small screens, not after 250 posts */
-  .hn:nth-child(n+6) { display: none; }
-}
-.rail { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 6px; }
-.rail h3 { margin: 0 0 4px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.rail h3 .y { background: var(--hn); color: #fff; width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font-size: 12px; }
-.rail p.sub { margin: 0 0 8px; color: var(--faint); font-size: 12.5px; }
-.hn { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
-.pts { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--hn); font-size: 14px; text-align: right; padding-top: 1px; }
+aside { align-self: start; position: sticky; top: 150px; }
+.learn aside { top: 90px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 8px; }
+.panel h3 { margin: 0 0 2px; font: 600 17px var(--serif); display: flex; align-items: center; gap: 8px; }
+.panel p.sub { margin: 0 0 8px; color: var(--faint); font-size: 12.5px; }
+.y { background: var(--accent); color: var(--on-accent); width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font: 600 11px var(--sans); }
+.hn { display: grid; grid-template-columns: 42px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pts { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); font-size: 13.5px; text-align: right; }
 .hn a.t { font-size: 14px; line-height: 1.35; font-weight: 500; display: block; }
 .hn a.t:hover { color: var(--accent); }
 .hn .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
 .hn .m a:hover { color: var(--text); text-decoration: underline; }
-
-/* View switch */
-.views { display: inline-flex; background: var(--chip); border-radius: 10px; padding: 3px; gap: 2px; }
-.views button { border: 0; background: none; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-.views button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-body[data-view="week"] .live-only, body[data-view="live"] .week-only { display: none !important; }
+.empty { padding: 48px 0; color: var(--muted); text-align: center; }
+footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
+footer .bad { color: var(--accent); }
 
 /* Week timeline */
 .week { max-width: 860px; margin: 0 auto; padding: 32px 0 72px; }
 .wk-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 32px; }
-.wk-nav button { white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
+.wk-nav button { white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
 .wk-nav button:hover:not(:disabled) { color: var(--text); }
 .wk-nav button:disabled { opacity: .35; cursor: default; }
 .wk-nav .range { font-size: 13px; color: var(--muted); }
-.kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-.week h1 { font: 600 46px/1.08 Newsreader, Georgia, serif; letter-spacing: -0.02em; margin: 10px 0 12px; }
+.kicker { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.big { font: 700 46px/1.08 var(--serif); letter-spacing: -0.02em; margin: 10px 0 12px; }
 .lede { font-size: 17px; color: var(--muted); margin: 0; }
-.lede b { color: var(--text); font-weight: 500; }
-
-/* The strip: seven days left to right, bar height = how busy the day was */
+.lede b { color: var(--text); font-weight: 600; }
 .strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 32px 0 8px; }
-.strip button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); }
-.strip button:hover { border-color: var(--accent); color: var(--text); }
-.strip button.today { border-color: var(--accent); }
+.strip button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--muted); }
+.strip button:hover, .strip button.today { border-color: var(--accent); }
 .strip .wd { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-.strip .dn { font: 600 22px/1 Newsreader, serif; color: var(--text); }
+.strip .dn { font: 700 22px/1 var(--serif); color: var(--text); }
 .strip .bars { height: 56px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 3px; }
 .strip .bars i { width: 12px; border-radius: 3px 3px 0 0; min-height: 2px; }
 .strip .bars .l { background: var(--accent); }
@@ -142,23 +140,19 @@ body[data-view="week"] .live-only, body[data-view="live"] .week-only { display: 
 .strip .ct { font-size: 12px; font-variant-numeric: tabular-nums; }
 .legend { display: flex; gap: 16px; font-size: 12px; color: var(--faint); justify-content: flex-end; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-
-.wk-sec { margin-top: 44px; }
-.wk-sec > h2 { font: 600 13px/1 Inter, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.sec { margin-top: 44px; }
+.sec > h2 { font: 600 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
 .top-item { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
-.top-item .rank { font: 600 20px Newsreader, serif; color: var(--faint); }
-.top-item .t { font: 500 19px/1.3 Newsreader, Georgia, serif; }
+.top-item .rank { font: 700 20px var(--serif); color: var(--faint); }
+.top-item .t { font: 600 19px/1.3 var(--serif); }
 .top-item .t:hover { color: var(--accent); }
-.top-item .pts { color: var(--hn); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.top-item .pts { font-size: 13px; white-space: nowrap; }
 .top-item .m { grid-column: 2 / 4; font-size: 12.5px; color: var(--faint); }
 .top-item .m a:hover { color: var(--text); text-decoration: underline; }
-
-/* The timeline: one block per day, newest first */
-.tl { position: relative; margin-top: 8px; }
 .tl-day { display: grid; grid-template-columns: 120px 1fr; gap: 0 28px; position: relative; padding-top: 28px; scroll-margin-top: 90px; }
 .tl-day::before { content: ""; position: absolute; left: 136px; top: 0; bottom: 0; width: 1px; background: var(--line); }
 .tl-when { position: sticky; top: 88px; align-self: start; text-align: right; }
-.tl-when .wd { font: 600 17px/1.2 Newsreader, serif; }
+.tl-when .wd { font: 700 17px/1.2 var(--serif); }
 .tl-when .dt { font-size: 12.5px; color: var(--faint); }
 .tl-body { position: relative; padding-bottom: 8px; }
 .tl-body::before { content: ""; position: absolute; left: -19px; top: 7px; width: 11px; height: 11px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); }
@@ -171,34 +165,65 @@ body[data-view="week"] .live-only, body[data-view="live"] .week-only { display: 
 .tl-hn .h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin-bottom: 4px; }
 .tl-hn a { display: flex; gap: 10px; padding: 4px 0; font-size: 14px; }
 .tl-hn a:hover span:last-child { color: var(--accent); }
-.tl-hn .p { color: var(--hn); font-weight: 600; font-size: 12.5px; min-width: 44px; font-variant-numeric: tabular-nums; }
+.tl-hn .p { color: var(--accent); font-weight: 600; font-size: 12.5px; min-width: 44px; font-variant-numeric: tabular-nums; }
 .tl-quiet { color: var(--faint); font-style: italic; font-size: 14px; padding-bottom: 14px; }
+
+/* Learn */
+.learn { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; padding: 32px 0 72px; }
+.learn .big { font-size: 40px; }
+.tracks { display: flex; gap: 6px; flex-wrap: wrap; margin: 24px 0 10px; }
+.track { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.track .n { font-weight: 600; font-size: 14px; color: var(--text); }
+.track .c { font-size: 12px; color: var(--faint); }
+.track:hover { border-color: var(--faint); }
+.track[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.track[aria-pressed="true"] .n { color: var(--accent); }
+.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--rule); margin-top: 18px; }
+.tabs button { background: none; border: 0; padding: 10px 0; font-size: 14px; font-weight: 500; color: var(--faint); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tabs button b { font-weight: 500; font-size: 12px; margin-left: 5px; color: var(--faint); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 16px; }
+.stat { background: var(--surface-2); border-radius: 8px; padding: 10px 4px; text-align: center; }
+.stat b { display: block; font: 700 24px/1.1 var(--serif); color: var(--text); }
+.stat span { font-size: 11.5px; color: var(--faint); }
+.bars-h { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 12px; }
+.bh .row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.bh .row b { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; }
+.bh .track-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.bh .track-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.next { border-top: 1px solid var(--line); padding: 12px 0 8px; }
+.next .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); margin-bottom: 6px; }
+.next a { font: 600 15px/1.35 var(--serif); display: block; }
+.next a:hover { color: var(--accent); }
+.next .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
+
+@media (max-width: 900px) {
+  .layout, .learn { grid-template-columns: 1fr; gap: 28px; }
+  aside { position: static; }
+  .layout aside { order: -1; }
+  .layout .hn:nth-child(n+6) { display: none; }
+}
 @media (max-width: 600px) {
-  .week { padding-top: 20px; } .week h1 { font-size: 34px; }
-  .strip { gap: 4px; } .strip button { padding: 8px 2px 6px; border-radius: 9px; } .strip .dn { font-size: 17px; }
+  .wrap { padding: 0 16px; }
+  .bar { height: auto; flex-wrap: wrap; padding: 10px 0; gap: 6px; }
+  .logo { font-size: 20px; }
+  .views button { padding: 5px 7px; font-size: 12.5px; }
+  .search { order: 5; flex-basis: 100%; max-width: none; }
+  #refresh, body[data-view="live"] #refresh { margin-left: auto; }
+  .btn-label { display: none; }
+  .icon-btn { min-width: 32px; height: 32px; padding: 0 7px; }
+  .title { font-size: 18px; }
+  .big, .learn .big { font-size: 32px; }
+  .week, .learn { padding-top: 20px; }
+  .strip { gap: 4px; } .strip button { padding: 8px 2px 6px; } .strip .dn { font-size: 17px; }
   .strip .bars { height: 40px; } .strip .bars i { width: 7px; }
   .tl-day { grid-template-columns: 1fr; padding-left: 22px; }
   .tl-day::before { left: 5px; }
   .tl-when { position: static; text-align: left; margin-bottom: 10px; display: flex; gap: 8px; align-items: baseline; }
   .tl-body::before { left: -22px; top: -30px; }
   .wk-nav .lbl { display: none; } .top-item .t { font-size: 17px; }
-}
-
-.empty { padding: 48px 0; color: var(--muted); text-align: center; }
-footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
-footer .bad { color: var(--accent); }
-
-@media (max-width: 600px) {
-  .wrap { padding: 0 16px; }
-  .views button { padding: 6px 7px; font-size: 12.5px; }
-  .bar { gap: 6px; } .logo { font-size: 20px; }
-  .icon-btn { min-width: 34px; height: 34px; padding: 0 8px; }
-  
-  .bar { height: auto; flex-wrap: wrap; padding: 12px 0; gap: 10px; }
-  .search { order: 3; flex-basis: 100%; max-width: none; }
-  .title { font-size: 18px; }
-  .btn-label { display: none; }
-  #refresh { margin-left: auto; }
+  .track { min-width: 0; flex: 1 1 40%; }
+  .toggle { margin-left: 0; }
 }
 </style>
 </head>
@@ -210,62 +235,92 @@ footer .bad { color: var(--accent); }
       <div class="views" id="views" role="group" aria-label="View">
         <button data-v="live">Feed</button>
         <button data-v="week">This week</button>
+        <button data-v="learn">Learn</button>
       </div>
       <label class="search live-only">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts">
       </label>
-      <button class="icon-btn" id="refresh" title="Scrape all sources now">
+      <button class="icon-btn" id="refresh" title="Fetch all sources now">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
         <span class="btn-label">Refresh</span>
       </button>
-      <button class="icon-btn" id="theme" title="Toggle theme" aria-label="Toggle theme">
+      <button class="icon-btn" id="theme" title="Switch light / dark" aria-label="Switch light or dark theme">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
     </div>
-    <nav class="filters live-only" id="filters" aria-label="Filter by source"></nav>
+    <nav class="filters live-only" aria-label="Filter posts">
+      <div class="chips" id="groups"></div>
+      <div class="chips" id="orgs"></div>
+    </nav>
   </div>
 </header>
 
 <main class="wrap">
-  <article class="week week-only" id="week" aria-live="polite"></article>
   <div class="layout live-only">
     <section id="feed" aria-live="polite"><div class="empty">Loading…</div></section>
     <aside>
-      <div class="rail">
+      <div class="panel">
         <h3><span class="y">Y</span> Latest on Hacker News</h3>
         <p class="sub">Newest AI stories with 40+ points</p>
         <div id="hn"></div>
       </div>
     </aside>
   </div>
+  <article class="week week-only" id="week" aria-live="polite"></article>
+  <div class="learn learn-only">
+    <section>
+      <div class="kicker">AI Wire · Learn</div>
+      <h1 class="big">Level up, one post at a time</h1>
+      <p class="lede">Technical deep dives from engineering teams, AI labs and researchers, sorted by skill. Save what you want to read and mark what you've read.</p>
+      <div class="tracks" id="tracks"></div>
+      <div class="tabs" id="ltabs" role="group" aria-label="Reading status"></div>
+      <div id="learn-list" aria-live="polite"></div>
+    </section>
+    <aside>
+      <div class="panel" id="progress"></div>
+    </aside>
+  </div>
 </main>
 <footer class="wrap live-only" id="status"></footer>
 
 <script>
+// ---- Shared -----------------------------------------------------------------
 const ORG_COLORS = {
   "Anthropic": "#d97757", "OpenAI": "#10a37f", "Google": "#4285f4", "Meta": "#0866ff",
-  "Mistral": "#fa520f", "Hugging Face": "#ffb000", "NVIDIA": "#76b900", "Microsoft": "#7f5af0",
-  "Berkeley": "#003262", "Hacker News": "#ff6600",
+  "Mistral": "#fa520f", "Hugging Face": "#e6a100", "NVIDIA": "#76b900", "Microsoft": "#7f5af0",
+  "Berkeley": "#3b6fb6", "Netflix": "#e50914", "Cloudflare": "#f38020", "Stripe": "#635bff",
+  "GitHub": "#8b949e", "Airbnb": "#ff5a5f", "Dropbox": "#0061fe", "Slack": "#e01e5a",
+  "Pinterest": "#e60023", "Shopify": "#95bf47", "Spotify": "#1db954", "AWS": "#ff9900",
+  "Databricks": "#ff3621", "LangChain": "#2f8f83", "ByteByteGo": "#5b8def", "Pragmatic Engineer": "#c2410c",
+  "Martin Fowler": "#8b8b8b", "Simon Willison": "#a78bfa", "Latent Space": "#14b8a6",
+  "Eugene Yan": "#f59e0b", "Lilian Weng": "#ec4899", "Hacker News": "#ff6600",
 };
+const GROUPS = [["all", "Everything"], ["lab", "AI labs"], ["engineering", "Engineering blogs"], ["learning", "Newsletters & researchers"]];
+const TRACKS = [["all", "All topics"], ["agents", "AI agents"], ["system-design", "System design"], ["infra", "Infra & performance"], ["research", "LLM research"], ["general", "General engineering"]];
+const TOPIC_LABEL = Object.fromEntries(TRACKS);
 
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
-
-let data = { posts: [], sources: [] };
-let active = store.get("ainews.filter", "all");
-const lastVisit = store.get("ainews.lastVisit", null);
-store.set("ainews.lastVisit", new Date().toISOString());
-
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const when = (p) => new Date(p.date || p.first_seen);
-const isNew = (p) => lastVisit && new Date(p.first_seen) > new Date(lastVisit);
-// Newest first; posts with the same timestamp keep the order we first saw them in.
+const when = (p) => new Date(p.date || p.first_seen || p.saved_at || p.read_at);
 const newestFirst = (a, b) => when(b) - when(a) || new Date(b.first_seen) - new Date(a.first_seen);
 const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const color = (org) => ORG_COLORS[org] || "var(--faint)";
+const topicsOf = (p) => p.topics?.length ? p.topics : ["general"];
+
+let data = { posts: [], sources: [] };
+let prog = { posts: {}, stats: {} };
+let group = store.get("aiwire.group", "all");
+let org = store.get("aiwire.org", "all");
+let deepOnly = store.get("aiwire.deepOnly", false);
+const lastVisit = store.get("ainews.lastVisit", null);
+store.set("ainews.lastVisit", new Date().toISOString());
+const isNew = (p) => lastVisit && p.first_seen && new Date(p.first_seen) > new Date(lastVisit);
 
 function ago(d) {
   const s = (Date.now() - d) / 1000;
@@ -274,7 +329,6 @@ function ago(d) {
   if (s < 86400 * 7) return `${Math.round(s / 86400)}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
-
 function dayLabel(d) {
   const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
   const diff = Math.round((start(new Date()) - start(d)) / 86400000);
@@ -284,177 +338,234 @@ function dayLabel(d) {
   return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
 }
 
-function matches(p, q) {
-  return !q || (p.title + " " + (p.summary || "") + " " + p.source_name).toLowerCase().includes(q);
+// Save / mark-read buttons, shared by Feed and Learn.
+const ICON_SAVE = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`;
+const ICON_SAVED = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`;
+const ICON_READ = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5 9-10"/></svg>`;
+function actions(p) {
+  const e = prog.posts[p.url] || {};
+  return `<div class="acts">
+    <button class="act save" data-act="save" data-url="${esc(p.url)}" aria-pressed="${!!e.saved_at}" title="${e.saved_at ? "Remove from reading list" : "Save to reading list"}" aria-label="Save to reading list">${e.saved_at ? ICON_SAVED : ICON_SAVE}</button>
+    <button class="act read" data-act="read" data-url="${esc(p.url)}" aria-pressed="${!!e.read_at}" title="${e.read_at ? "Mark as unread" : "Mark as read"}" aria-label="Mark as read">${ICON_READ}</button></div>`;
+}
+function tags(p) {
+  if (!p.deep_dive) return "";
+  return `<span class="tag dd">Deep dive</span>` + topicsOf(p).map((t) => `<span class="tag">${esc(TOPIC_LABEL[t] || t)}</span>`).join("");
+}
+function postCard(p) {
+  const d = when(p), e = prog.posts[p.url] || {};
+  return `<article class="post${e.read_at ? " is-read" : ""}"><div>
+      <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span><span>·</span>
+        <time datetime="${d.toISOString()}">${ago(d)}</time>${isNew(p) ? '<span class="new">New</span>' : ""}${tags(p)}</div>
+      <a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><h3 class="title">${esc(p.title)}</h3></a>
+      ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
+    </div>${actions(p)}</article>`;
 }
 
+async function setProgress(url, change) {
+  const post = data.posts.find((p) => p.url === url) || prog.posts[url];
+  if (!post) return;
+  const res = await fetch("/api/progress", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post, ...change }) });
+  if (res.ok) { prog = await res.json(); renderFeed(); renderLearn(); }
+}
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-act]");
+  if (!b) return;
+  const e = prog.posts[b.dataset.url] || {};
+  setProgress(b.dataset.url, b.dataset.act === "save" ? { saved: !e.saved_at } : { read: !e.read_at });
+});
+
+// ---- Feed -------------------------------------------------------------------
+const feedPosts = () => data.posts.filter((p) => p.source !== "hn");
 function renderFilters() {
-  const labs = data.posts.filter((p) => p.source !== "hn");
-  const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn").map((s) => s.org))];
+  const posts = feedPosts();
   const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
-  const chip = (key, label, n) =>
-    `<button class="chip${failed.has(key) ? " err" : ""}" data-f="${esc(key)}" aria-pressed="${active === key}">` +
-    (key !== "all" ? `<span class="dot" style="background:${ORG_COLORS[key] || "var(--faint)"}"></span>` : "") +
-    `${esc(label)} <b>${n}</b></button>`;
-  $("filters").innerHTML = chip("all", "All labs", labs.length) +
-    orgs.map((o) => chip(o, o, labs.filter((p) => p.org === o).length)).join("");
+  $("groups").innerHTML = GROUPS.map(([k, label]) =>
+    `<button class="chip group" data-group="${k}" aria-pressed="${group === k}">${label} <b>${posts.filter((p) => k === "all" || p.group === k).length}</b></button>`).join("") +
+    `<label class="toggle"><input type="checkbox" id="deep" ${deepOnly ? "checked" : ""}> Deep dives only</label>`;
+  const inGroup = posts.filter((p) => group === "all" || p.group === group);
+  const count = (o) => inGroup.filter((p) => p.org === o).length;
+  const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn" && (group === "all" || s.group === group)).map((s) => s.org))].sort((a, b) => count(b) - count(a));
+  $("orgs").innerHTML = `<button class="chip" data-org="all" aria-pressed="${org === "all"}">All sources</button>` + orgs.map((o) =>
+    `<button class="chip${failed.has(o) ? " err" : ""}" data-org="${esc(o)}" aria-pressed="${org === o}"><span class="dot" style="background:${color(o)}"></span>${esc(o)} <b>${count(o)}</b></button>`).join("");
 }
-
 function renderFeed() {
   const q = $("q").value.trim().toLowerCase();
-  const posts = data.posts
-    .filter((p) => p.source !== "hn" && (active === "all" || p.org === active) && matches(p, q))
+  const posts = feedPosts()
+    .filter((p) => (group === "all" || p.group === group) && (org === "all" || p.org === org) && (!deepOnly || p.deep_dive))
+    .filter((p) => !q || `${p.title} ${p.summary} ${p.source_name}`.toLowerCase().includes(q))
     .sort(newestFirst);
-
-  if (!posts.length) {
-    $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`;
-    return;
-  }
+  if (!posts.length) { $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`; return; }
   let html = "", lastDay = "";
-  for (const p of posts) {
-    const d = when(p), day = dayLabel(d);
+  for (const p of posts.slice(0, 250)) {
+    const day = dayLabel(when(p));
     if (day !== lastDay) { html += `<h2 class="day">${esc(day)}</h2>`; lastDay = day; }
-    html += `<a class="post" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
-      <div class="meta"><span class="dot" style="background:${ORG_COLORS[p.org] || "var(--faint)"}"></span>
-        <span>${esc(p.source_name)}</span><span>·</span><time datetime="${d.toISOString()}">${ago(d)}</time>
-        ${isNew(p) ? '<span class="new">New</span>' : ""}</div>
-      <h3 class="title">${esc(p.title)}</h3>
-      ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
-    </a>`;
+    html += postCard(p);
   }
   $("feed").innerHTML = html;
 }
-
 function renderHN() {
   const q = $("q").value.trim().toLowerCase();
-  const items = data.posts.filter((p) => p.source === "hn" && matches(p, q))
-    .sort(newestFirst).slice(0, 15);
-  $("hn").innerHTML = items.length ? items.map((p) => {
-    let host = "";
-    try { host = new URL(p.url).hostname.replace(/^www\./, ""); } catch {}
-    return `<div class="hn"><div class="pts">${p.points}</div><div>
+  const items = data.posts.filter((p) => p.source === "hn" && (!q || p.title.toLowerCase().includes(q))).sort(newestFirst).slice(0, 15);
+  $("hn").innerHTML = items.map((p) => `<div class="hn"><div class="pts">${p.points}</div><div>
       <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
-      <div class="m">${esc(host)} · ${ago(when(p))} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div>
-    </div></div>`;
-  }).join("") : `<div class="empty" style="padding:20px 0">No stories.</div>`;
+      <div class="m">${esc(hostOf(p.url))} · ${ago(when(p))} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div></div>`).join("")
+    || `<div class="empty" style="padding:20px 0">No stories.</div>`;
 }
-
 function renderStatus() {
   const bad = data.sources.filter((s) => !s.ok);
-  const updated = data.updated ? `Updated ${ago(new Date(data.updated))}` : "Not updated yet";
-  $("status").innerHTML = `${updated} · ${data.sources.length} sources · ${data.posts.length} posts` +
+  $("status").innerHTML = `${data.updated ? "Updated " + ago(new Date(data.updated)) : "Not updated yet"} · ${data.sources.length} sources · ${data.posts.length} posts` +
     (bad.length ? ` · <span class="bad" title="${esc(bad.map((s) => s.name + ": " + s.error).join("\n"))}">${bad.length} failed: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
 }
-
-function render() { renderFilters(); renderFeed(); renderHN(); renderStatus(); }
-
-async function load(method = "GET") {
-  const res = await fetch(method === "POST" ? "/api/refresh" : "/api/news", { method });
-  data = await res.json();
-  if (active !== "all" && !data.posts.some((p) => p.org === active)) active = "all";
-  render();
-}
-
-$("filters").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-f]");
+$("groups").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-group]");
   if (!b) return;
-  active = b.dataset.f;
-  store.set("ainews.filter", active);
+  group = b.dataset.group; org = "all"; store.set("aiwire.group", group); store.set("aiwire.org", org);
   renderFilters(); renderFeed();
 });
+$("groups").addEventListener("change", (e) => { if (e.target.id === "deep") { deepOnly = e.target.checked; store.set("aiwire.deepOnly", deepOnly); renderFeed(); } });
+$("orgs").addEventListener("click", (e) => { const b = e.target.closest("[data-org]"); if (b) { org = b.dataset.org; store.set("aiwire.org", org); renderFilters(); renderFeed(); } });
 $("q").addEventListener("input", () => { renderFeed(); renderHN(); });
-$("refresh").addEventListener("click", async () => {
-  const b = $("refresh");
-  b.classList.add("spin"); b.disabled = true;
-  try { await load("POST"); if (view === "week") await loadWeek(); } finally { b.classList.remove("spin"); b.disabled = false; }
-});
-$("theme").addEventListener("click", () => {
-  const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#141412";
-  document.documentElement.dataset.theme = dark ? "light" : "dark";
-  store.set("aiwire.theme", document.documentElement.dataset.theme);
-});
-const savedTheme = store.get("aiwire.theme", "dark");
-if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 
-// ---- This week ---------------------------------------------------------------
-let weekEnd = null;  // null = the week ending today
-const linkedWeek = location.hash.match(/^#week-(\d{4}-\d{2}-\d{2})$/)?.[1];
-if (linkedWeek) weekEnd = linkedWeek;
+// ---- This week --------------------------------------------------------------
+let weekEnd = location.hash.match(/^#week-(\d{4}-\d{2}-\d{2})$/)?.[1] || null;
 const fmtDay = (day, opts) => new Date(day + "T12:00:00").toLocaleDateString(undefined, opts);
-const todayStr = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
-const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+const localDay = (p) => when(p).toLocaleDateString("en-CA");
 
 async function loadWeek() {
   const w = await (await fetch("/api/week" + (weekEnd ? "?end=" + weekEnd : ""))).json();
   if (view === "week") history.replaceState(null, "", weekEnd ? "#week-" + weekEnd : "#week");
-  const thisWeek = !w.newer;
   const range = `${fmtDay(w.start, { month: "short", day: "numeric" })} – ${fmtDay(w.end, { month: "short", day: "numeric" })}`;
   const max = Math.max(1, ...w.days.map((d) => Math.max(d.counts.labs, d.counts.hn)));
-
   let html = `<nav class="wk-nav">
       <button data-week="${w.older || ""}" ${w.older ? "" : "disabled"} aria-label="Previous week">← <span class="lbl">Previous week</span></button>
       <span class="range">${range}</span>
       <button data-week="${w.newer || ""}" ${w.newer ? "" : "disabled"} aria-label="Next week"><span class="lbl">Next week</span> →</button></nav>
-    <div class="kicker">AI Wire · ${thisWeek ? "This week" : "Week of " + fmtDay(w.start, { month: "long", day: "numeric" })}</div>
-    <h1>The week in AI</h1>
-    <p class="lede"><b>${w.counts.labs} posts</b> from the labs and <b>${w.counts.hn} stories</b> on Hacker News, ${range}${thisWeek ? ", so far" : ""}.</p>
+    <div class="kicker">AI Wire · ${w.newer ? "Week of " + fmtDay(w.start, { month: "long", day: "numeric" }) : "This week"}</div>
+    <h1 class="big">The week in AI</h1>
+    <p class="lede"><b>${w.counts.labs} posts</b> from the blogs and <b>${w.counts.hn} stories</b> on Hacker News, ${range}${w.newer ? "" : ", so far"}.</p>
     <div class="strip">${[...w.days].reverse().map((d) => `
-      <button data-jump="${d.date}" class="${d.date === todayStr() ? "today" : ""}" title="${d.counts.labs} lab posts, ${d.counts.hn} HN stories">
+      <button data-jump="${d.date}" class="${d.date === todayStr() ? "today" : ""}" title="${d.counts.labs} blog posts, ${d.counts.hn} HN stories">
         <span class="wd">${fmtDay(d.date, { weekday: "short" })}</span><span class="dn">${fmtDay(d.date, { day: "numeric" })}</span>
         <span class="bars"><i class="l" style="height:${(d.counts.labs / max) * 100}%"></i><i class="h" style="height:${(d.counts.hn / max) * 100}%"></i></span>
         <span class="ct">${d.counts.labs + d.counts.hn}</span></button>`).join("")}</div>
-    <div class="legend"><span><i style="background:var(--accent)"></i>Lab posts</span><span><i style="background:var(--faint)"></i>Hacker News</span></div>`;
-
-  if (w.top.length) {
-    html += `<section class="wk-sec"><h2>Biggest stories this week</h2>` + w.top.map((p, n) => `
-      <div class="top-item"><span class="rank">${n + 1}</span>
-        <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Blog posts</span><span><i style="background:var(--faint)"></i>Hacker News</span></div>`;
+  if (w.top.length) html += `<section class="sec"><h2>Biggest stories this week</h2>` + w.top.map((p, n) => `
+      <div class="top-item"><span class="rank">${n + 1}</span><a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
         <span class="pts">▲ ${p.points}</span>
-        <div class="m">${esc(hostOf(p.url))} · ${fmtDay(local(p), { weekday: "short" })} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div>`).join("") + `</section>`;
-  }
-
-  html += `<section class="wk-sec"><h2>Day by day</h2><div class="tl">` + w.days.map((d) => {
-    const labs = d.labs.flatMap((g) => g.posts).sort(newestFirst);
-    const hn = d.hn.slice(0, 3);
-    const quiet = !labs.length && !hn.length;
+        <div class="m">${esc(hostOf(p.url))} · ${fmtDay(localDay(p), { weekday: "short" })} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div>`).join("") + `</section>`;
+  html += `<section class="sec"><h2>Day by day</h2>` + w.days.map((d) => {
+    const posts = d.labs.flatMap((g) => g.posts).sort(newestFirst);
+    const hn = d.hn.slice(0, 3), quiet = !posts.length && !hn.length;
     return `<div class="tl-day${quiet ? " quiet" : ""}" id="day-${d.date}">
-      <div class="tl-when"><div class="wd">${d.date === todayStr() ? "Today" : fmtDay(d.date, { weekday: "long" })}</div>
-        <div class="dt">${fmtDay(d.date, { month: "long", day: "numeric" })}</div></div>
-      <div class="tl-body">` +
-      labs.map((p) => `<a class="tl-item" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
-        <div class="meta"><span class="dot" style="background:${ORG_COLORS[p.org] || "var(--faint)"}"></span><span>${esc(p.source_name)}</span>${isNew(p) ? '<span class="new">New</span>' : ""}</div>
+      <div class="tl-when"><div class="wd">${d.date === todayStr() ? "Today" : fmtDay(d.date, { weekday: "long" })}</div><div class="dt">${fmtDay(d.date, { month: "long", day: "numeric" })}</div></div>
+      <div class="tl-body">` + posts.map((p) => `<a class="tl-item" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+        <div class="meta"><span class="dot" style="background:${color(p.org)}"></span><span>${esc(p.source_name)}</span>${p.deep_dive ? '<span class="tag dd">Deep dive</span>' : ""}</div>
         <h3 class="title">${esc(p.title)}</h3></a>`).join("") +
-      (hn.length ? `<div class="tl-hn"><div class="h">Top on Hacker News</div>${hn.map((p) =>
-        `<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><span class="p">▲ ${p.points}</span><span>${esc(p.title)}</span></a>`).join("")}</div>` : "") +
-      (quiet ? `<div class="tl-quiet">${d.date === todayStr() ? "Nothing yet today." : "A quiet day."}</div>` : "") +
-      `</div></div>`;
-  }).join("") + `</div></section>`;
+      (hn.length ? `<div class="tl-hn"><div class="h">Top on Hacker News</div>${hn.map((p) => `<a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener"><span class="p">▲ ${p.points}</span><span>${esc(p.title)}</span></a>`).join("")}</div>` : "") +
+      (quiet ? `<div class="tl-quiet">${d.date === todayStr() ? "Nothing yet today." : "A quiet day."}</div>` : "") + `</div></div>`;
+  }).join("") + `</section>`;
   $("week").innerHTML = html;
 }
-const local = (p) => new Date(p.date || p.first_seen).toLocaleDateString("en-CA");
-
 $("week").addEventListener("click", (e) => {
   const wk = e.target.closest("[data-week]");
   if (wk?.dataset.week) { weekEnd = wk.dataset.week === todayStr() ? null : wk.dataset.week; loadWeek(); scrollTo({ top: 0 }); return; }
   const j = e.target.closest("[data-jump]");
-  if (j) document.getElementById("day-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth" });
+  if (j) $("day-" + j.dataset.jump)?.scrollIntoView({ behavior: "smooth" });
 });
 
-// ---- View switch ------------------------------------------------------------
-let view = linkedWeek || location.hash === "#week" ? "week" : store.get("aiwire.view2", "live");
+// ---- Learn ------------------------------------------------------------------
+let track = store.get("aiwire.track", "all");
+let ltab = store.get("aiwire.ltab", "toread");
+
+// Everything learnable: deep dives in the current data, plus anything you saved
+// or read earlier that has since dropped off the feeds.
+function learnPool() {
+  const map = new Map(data.posts.filter((p) => p.deep_dive).map((p) => [p.url, p]));
+  for (const [url, e] of Object.entries(prog.posts)) if (!map.has(url)) map.set(url, e);
+  return [...map.values()];
+}
+function renderLearn() {
+  const pool = learnPool();
+  const st = (p) => prog.posts[p.url] || {};
+  const inTrack = (p) => track === "all" || topicsOf(p).includes(track);
+  $("tracks").innerHTML = TRACKS.map(([k, label]) => {
+    const ps = pool.filter((p) => k === "all" || topicsOf(p).includes(k));
+    return `<button class="track" data-track="${k}" aria-pressed="${track === k}"><span class="n">${label}</span>
+      <span class="c">${ps.length} posts · ${ps.filter((p) => st(p).read_at).length} read</span></button>`;
+  }).join("");
+  const lists = {
+    toread: pool.filter((p) => inTrack(p) && !st(p).read_at).sort(newestFirst),
+    saved: pool.filter((p) => inTrack(p) && st(p).saved_at && !st(p).read_at).sort((a, b) => new Date(st(b).saved_at) - new Date(st(a).saved_at)),
+    read: pool.filter((p) => inTrack(p) && st(p).read_at).sort((a, b) => new Date(st(b).read_at) - new Date(st(a).read_at)),
+  };
+  $("ltabs").innerHTML = [["toread", "To read"], ["saved", "Reading list"], ["read", "Read"]].map(([k, l]) =>
+    `<button data-ltab="${k}" aria-pressed="${ltab === k}">${l}<b>${lists[k].length}</b></button>`).join("");
+  const empty = {
+    toread: "You've read everything here. Nice work.",
+    saved: "Nothing saved yet. Use the bookmark on any post to build your reading list.",
+    read: "Posts you mark as read will show up here.",
+  }[ltab];
+  const items = lists[ltab];
+  $("learn-list").innerHTML = items.length ? items.slice(0, 150).map(postCard).join("") : `<div class="empty">${empty}</div>`;
+  renderProgress(pool);
+}
+function renderProgress(pool) {
+  const s = prog.stats || {};
+  const tracks = TRACKS.slice(1).map(([k, label]) => ({ k, label, total: pool.filter((p) => topicsOf(p).includes(k)).length, read: s.by_topic?.[k] || 0 })).filter((t) => t.total);
+  const saved = Object.values(prog.posts).filter((e) => e.saved_at && !e.read_at).sort((a, b) => new Date(a.saved_at) - new Date(b.saved_at));
+  const weakest = [...tracks].sort((a, b) => a.read / a.total - b.read / b.total)[0];
+  const suggestion = saved[0] || (weakest && pool.filter((p) => topicsOf(p).includes(weakest.k) && !prog.posts[p.url]?.read_at).sort(newestFirst)[0]);
+  $("progress").innerHTML = `<h3>Your progress</h3><p class="sub">Saved on this computer</p>
+    <div class="stats"><div class="stat"><b>${s.streak || 0}</b><span>day streak</span></div>
+      <div class="stat"><b>${s.read_this_week || 0}</b><span>this week</span></div>
+      <div class="stat"><b>${s.saved || 0}</b><span>to read</span></div></div>
+    <div class="bars-h">${tracks.map((t) => `<div class="bh"><div class="row"><span>${t.label}</span><b>${t.read} / ${t.total}</b></div>
+      <div class="track-bar"><i style="width:${Math.min(100, (t.read / t.total) * 100)}%"></i></div></div>`).join("")}</div>
+    ${suggestion ? `<div class="next"><div class="k">${saved[0] ? "Next on your reading list" : "Suggested · " + esc(weakest.label)}</div>
+      <a href="${esc(safeUrl(suggestion.url))}" target="_blank" rel="noopener">${esc(suggestion.title)}</a>
+      <div class="m">${esc(suggestion.source_name)}</div></div>` : ""}`;
+}
+$("tracks").addEventListener("click", (e) => { const b = e.target.closest("[data-track]"); if (b) { track = b.dataset.track; store.set("aiwire.track", track); renderLearn(); } });
+$("ltabs").addEventListener("click", (e) => { const b = e.target.closest("[data-ltab]"); if (b) { ltab = b.dataset.ltab; store.set("aiwire.ltab", ltab); renderLearn(); } });
+
+// ---- Views, theme, loading --------------------------------------------------
+let view = location.hash.startsWith("#week") ? "week" : location.hash === "#learn" ? "learn" : store.get("aiwire.view3", "live");
 function setView(v) {
   view = v;
   document.body.dataset.view = v;
-  store.set("aiwire.view2", v);
+  store.set("aiwire.view3", v);
   document.querySelectorAll("#views button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   if (v === "week") loadWeek().catch(() => {});
-  else history.replaceState(null, "", location.pathname);
+  else history.replaceState(null, "", v === "learn" ? "#learn" : location.pathname);
 }
 $("views").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (b) setView(b.dataset.v); });
-setView(view);
 
+function renderAll() { renderFilters(); renderFeed(); renderHN(); renderStatus(); renderLearn(); }
+async function load(refresh = false) {
+  const [news, p] = await Promise.all([
+    fetch(refresh ? "/api/refresh" : "/api/news", { method: refresh ? "POST" : "GET" }).then((r) => r.json()),
+    fetch("/api/progress").then((r) => r.json()),
+  ]);
+  data = news; prog = p;
+  if (org !== "all" && !data.posts.some((x) => x.org === org)) org = "all";
+  renderAll();
+}
+$("refresh").addEventListener("click", async () => {
+  const b = $("refresh"); b.classList.add("spin"); b.disabled = true;
+  try { await load(true); if (view === "week") await loadWeek(); } finally { b.classList.remove("spin"); b.disabled = false; }
+});
+$("theme").addEventListener("click", () => {
+  const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#17150f";
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  store.set("aiwire.theme", document.documentElement.dataset.theme);
+});
+document.documentElement.dataset.theme = store.get("aiwire.theme", "dark");
+
+setView(view);
 load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't reach the server.</div>`; });
-setInterval(() => load().catch(() => {}), 5 * 60 * 1000); // pick up background refreshes
+setInterval(() => load().then(() => view === "week" && loadWeek()).catch(() => {}), 5 * 60 * 1000);
 </script>
 </body>
 </html>

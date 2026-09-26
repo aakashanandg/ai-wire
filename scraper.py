@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from dateutil import parser as dateparser
 
 from sources import SOURCES
+from topics import classify
 
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
@@ -196,7 +197,8 @@ SCRAPERS = {"rss": scrape_rss, "html": scrape_html, "hn": scrape_hn}
 
 def scrape_source(src: dict) -> tuple[dict, list[dict]]:
     start = time.time()
-    status = {"id": src["id"], "name": src["name"], "org": src["org"], "ok": True, "error": None, "count": 0}
+    status = {"id": src["id"], "name": src["name"], "org": src["org"], "group": src["group"],
+              "ok": True, "error": None, "count": 0}
     try:
         posts = [p for p in SCRAPERS[src["kind"]](src) if p.get("title") and p.get("url")]
     except Exception as e:  # one broken site must not break the page
@@ -207,7 +209,8 @@ def scrape_source(src: dict) -> tuple[dict, list[dict]]:
     posts = [p for p in posts if not p["date"] or dateparser.parse(p["date"]).timestamp() > cutoff]
     posts = posts[:MAX_PER_SOURCE]
     for p in posts:
-        p.update(source=src["id"], source_name=src["name"], org=src["org"])
+        p.update(source=src["id"], source_name=src["name"], org=src["org"], group=src["group"])
+        classify(p, src)
     status.update(count=len(posts), undated=sum(1 for p in posts if not p["date"]),
                   seconds=round(time.time() - start, 1))
     return status, posts
@@ -218,8 +221,18 @@ def scrape_all(previous: dict | None = None) -> dict:
     first_seen = {p["url"]: p.get("first_seen") for p in (previous or {}).get("posts", [])}
     now = datetime.now(timezone.utc).isoformat()
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=12) as pool:
         results = list(pool.map(scrape_source, SOURCES))
+
+    # Feeds sometimes fail or come back empty for a moment. Keep that source's
+    # previous posts rather than making them vanish until the next refresh.
+    old_by_source: dict[str, list[dict]] = {}
+    for p in (previous or {}).get("posts", []):
+        old_by_source.setdefault(p["source"], []).append(p)
+    for status, source_posts in results:
+        if not source_posts and old_by_source.get(status["id"]):
+            source_posts.extend(old_by_source[status["id"]])
+            status.update(stale=True, count=len(source_posts))
 
     posts, seen_urls = [], set()
     for _, source_posts in results:
@@ -255,7 +268,7 @@ if __name__ == "__main__":
     save(data)
     print(f"{editions.update(data)} daily editions updated")
     for s in data["sources"]:
-        mark = "✓" if s["ok"] else "✗"
+        mark = ("~" if s.get("stale") else "✓") if s["ok"] else "✗"
         extra = s["error"] if not s["ok"] else f"{s['count']} posts ({s.get('undated', 0)} undated, {s.get('seconds')}s)"
         print(f"{mark} {s['name']:<24} {extra}")
     print(f"\n{len(data['posts'])} posts → {DATA_FILE}")

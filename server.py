@@ -10,6 +10,8 @@ Endpoints:
     GET  /api/editions/YYYY-MM-DD   one daily edition
     GET  /api/week?end=YYYY-MM-DD   seven days ending on that date (default today)
     POST /api/refresh   scrape now (returns when done)
+    GET  /api/progress  your saved/read posts and reading stats
+    POST /api/progress  {"post": {...}, "saved": true|false, "read": true|false}
 """
 
 import argparse
@@ -21,7 +23,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import editions
+import progress
 import scraper
+import topics
 
 STATIC = Path(__file__).parent / "static"
 lock = threading.Lock()
@@ -60,6 +64,10 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(editions.week(end))
             except ValueError:
                 return self.send_error(400, "end must be YYYY-MM-DD")
+        if path == "/api/progress":
+            return self.send_json(progress.summary())
+        if path == "/api/topics":
+            return self.send_json(topics.LABELS)
         if path == "/api/editions":
             return self.send_json(editions.index())
         if path.startswith("/api/editions/"):
@@ -71,6 +79,15 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path == "/api/refresh":
             refresh()
             return self.send_json(scraper.load())
+        if self.path == "/api/progress":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                if length > 100_000:
+                    raise ValueError("request too large")
+                body = json.loads(self.rfile.read(length))
+                return self.send_json(progress.update(body["post"], saved=body.get("saved"), read=body.get("read")))
+            except (ValueError, KeyError, TypeError) as e:
+                return self.send_error(400, str(e))
         self.send_error(404)
 
     def send_json(self, data):
