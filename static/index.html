@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Wire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --text: #1c1b18;
+  --muted: #6b675e;
+  --faint: #9b968b;
+  --line: #e6e2d8;
+  --accent: #c2410c;
+  --accent-soft: #fdebe0;
+  --chip: #efece4;
+  --hn: #e46a14;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141412; --surface: #1c1c19; --text: #ecebe6; --muted: #a29e93; --faint: #75716a;
+    --line: #2d2c28; --accent: #fb923c; --accent-soft: #3a2415; --chip: #262622; --hn: #fb923c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141412; --surface: #1c1c19; --text: #ecebe6; --muted: #a29e93; --faint: #75716a;
+  --line: #2d2c28; --accent: #fb923c; --accent-soft: #3a2415; --chip: #262622; --hn: #fb923c;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 Inter, system-ui, -apple-system, sans-serif;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+header { border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 10; }
+.bar { display: flex; align-items: center; gap: 16px; height: 64px; }
+.logo { font-family: Newsreader, Georgia, serif; font-weight: 600; font-size: 26px; letter-spacing: -0.01em; white-space: nowrap; }
+.logo span { color: var(--accent); }
+.search { flex: 1; max-width: 420px; margin-left: auto; position: relative; }
+.search input {
+  width: 100%; height: 38px; padding: 0 12px 0 34px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit;
+}
+.search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.search svg { position: absolute; left: 11px; top: 11px; color: var(--faint); }
+.icon-btn {
+  height: 38px; min-width: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 13px; color: var(--muted);
+}
+.icon-btn:hover { color: var(--text); }
+.spin svg { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Filters */
+.filters { display: flex; gap: 8px; padding: 14px 0; overflow-x: auto; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; border: 1px solid transparent; background: var(--chip); border-radius: 999px;
+  padding: 5px 12px; font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center;
+}
+.chip b { font-weight: 500; color: var(--faint); font-size: 12px; }
+.chip[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+.chip[aria-pressed="true"] b { color: inherit; opacity: .7; }
+.chip.err { text-decoration: line-through; opacity: .6; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 48px; padding: 8px 0 64px; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 32px; } }
+
+h2.day {
+  font: 600 12px/1 Inter, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--faint);
+  margin: 28px 0 4px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+}
+h2.day:first-child { margin-top: 8px; }
+
+.post { display: block; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.post:hover .title { color: var(--accent); }
+.meta { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.new { background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 11px; padding: 1px 7px; border-radius: 999px; }
+.title { font-family: Newsreader, Georgia, serif; font-size: 20px; line-height: 1.3; font-weight: 500; margin: 0; transition: color .15s; }
+.summary { color: var(--muted); font-size: 14px; margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* HN rail */
+aside { align-self: start; position: sticky; top: 88px; }
+@media (max-width: 900px) {
+  aside { position: static; order: -1; }        /* HN first on small screens, not after 250 posts */
+  .hn:nth-child(n+6) { display: none; }
+}
+.rail { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 6px; }
+.rail h3 { margin: 0 0 4px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.rail h3 .y { background: var(--hn); color: #fff; width: 18px; height: 18px; border-radius: 4px; display: inline-grid; place-items: center; font-size: 12px; }
+.rail p.sub { margin: 0 0 8px; color: var(--faint); font-size: 12.5px; }
+.hn { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.pts { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--hn); font-size: 14px; text-align: right; padding-top: 1px; }
+.hn a.t { font-size: 14px; line-height: 1.35; font-weight: 500; display: block; }
+.hn a.t:hover { color: var(--accent); }
+.hn .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
+.hn .m a:hover { color: var(--text); text-decoration: underline; }
+
+.empty { padding: 48px 0; color: var(--muted); text-align: center; }
+footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
+footer .bad { color: var(--accent); }
+
+@media (max-width: 600px) {
+  .wrap { padding: 0 16px; }
+  .bar { height: auto; flex-wrap: wrap; padding: 12px 0; gap: 10px; }
+  .search { order: 3; flex-basis: 100%; max-width: none; }
+  .title { font-size: 18px; }
+  .btn-label { display: none; }
+  #refresh { margin-left: auto; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <div class="logo">AI <span>Wire</span></div>
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts">
+      </label>
+      <button class="icon-btn" id="refresh" title="Scrape all sources now">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+        <span class="btn-label">Refresh</span>
+      </button>
+      <button class="icon-btn" id="theme" title="Toggle theme" aria-label="Toggle theme">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+    <nav class="filters" id="filters" aria-label="Filter by source"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="layout">
+    <section id="feed" aria-live="polite"><div class="empty">Loading…</div></section>
+    <aside>
+      <div class="rail">
+        <h3><span class="y">Y</span> Trending on Hacker News</h3>
+        <p class="sub">AI stories from the last 7 days, by points</p>
+        <div id="hn"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer class="wrap" id="status"></footer>
+
+<script>
+const ORG_COLORS = {
+  "Anthropic": "#d97757", "OpenAI": "#10a37f", "Google": "#4285f4", "Meta": "#0866ff",
+  "Mistral": "#fa520f", "Hugging Face": "#ffb000", "NVIDIA": "#76b900", "Microsoft": "#7f5af0",
+  "Berkeley": "#003262", "Hacker News": "#ff6600",
+};
+
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+let data = { posts: [], sources: [] };
+let active = store.get("ainews.filter", "all");
+const lastVisit = store.get("ainews.lastVisit", null);
+store.set("ainews.lastVisit", new Date().toISOString());
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const when = (p) => new Date(p.date || p.first_seen);
+const isNew = (p) => lastVisit && new Date(p.first_seen) > new Date(lastVisit);
+const safeUrl = (u) => /^https?:\/\//i.test(u || "") ? u : "#";
+
+function ago(d) {
+  const s = (Date.now() - d) / 1000;
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  if (s < 86400 * 7) return `${Math.round(s / 86400)}d ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function dayLabel(d) {
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const diff = Math.round((start(new Date()) - start(d)) / 86400000);
+  if (diff <= 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+}
+
+function matches(p, q) {
+  return !q || (p.title + " " + (p.summary || "") + " " + p.source_name).toLowerCase().includes(q);
+}
+
+function renderFilters() {
+  const labs = data.posts.filter((p) => p.source !== "hn");
+  const orgs = [...new Set(data.sources.filter((s) => s.id !== "hn").map((s) => s.org))];
+  const failed = new Set(data.sources.filter((s) => !s.ok).map((s) => s.org));
+  const chip = (key, label, n) =>
+    `<button class="chip${failed.has(key) ? " err" : ""}" data-f="${esc(key)}" aria-pressed="${active === key}">` +
+    (key !== "all" ? `<span class="dot" style="background:${ORG_COLORS[key] || "var(--faint)"}"></span>` : "") +
+    `${esc(label)} <b>${n}</b></button>`;
+  $("filters").innerHTML = chip("all", "All labs", labs.length) +
+    orgs.map((o) => chip(o, o, labs.filter((p) => p.org === o).length)).join("");
+}
+
+function renderFeed() {
+  const q = $("q").value.trim().toLowerCase();
+  const posts = data.posts
+    .filter((p) => p.source !== "hn" && (active === "all" || p.org === active) && matches(p, q))
+    .sort((a, b) => when(b) - when(a));
+
+  if (!posts.length) {
+    $("feed").innerHTML = `<div class="empty">${data.posts.length ? "No posts match." : "No posts yet. Try Refresh."}</div>`;
+    return;
+  }
+  let html = "", lastDay = "";
+  for (const p of posts) {
+    const d = when(p), day = dayLabel(d);
+    if (day !== lastDay) { html += `<h2 class="day">${esc(day)}</h2>`; lastDay = day; }
+    html += `<a class="post" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+      <div class="meta"><span class="dot" style="background:${ORG_COLORS[p.org] || "var(--faint)"}"></span>
+        <span>${esc(p.source_name)}</span><span>·</span><time datetime="${d.toISOString()}">${ago(d)}</time>
+        ${isNew(p) ? '<span class="new">New</span>' : ""}</div>
+      <h3 class="title">${esc(p.title)}</h3>
+      ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
+    </a>`;
+  }
+  $("feed").innerHTML = html;
+}
+
+function renderHN() {
+  const q = $("q").value.trim().toLowerCase();
+  const items = data.posts.filter((p) => p.source === "hn" && matches(p, q))
+    .sort((a, b) => b.points - a.points).slice(0, 15);
+  $("hn").innerHTML = items.length ? items.map((p) => {
+    let host = "";
+    try { host = new URL(p.url).hostname.replace(/^www\./, ""); } catch {}
+    return `<div class="hn"><div class="pts">${p.points}</div><div>
+      <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
+      <div class="m">${esc(host)} · ${ago(when(p))} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div>
+    </div></div>`;
+  }).join("") : `<div class="empty" style="padding:20px 0">No stories.</div>`;
+}
+
+function renderStatus() {
+  const bad = data.sources.filter((s) => !s.ok);
+  const updated = data.updated ? `Updated ${ago(new Date(data.updated))}` : "Not updated yet";
+  $("status").innerHTML = `${updated} · ${data.sources.length} sources · ${data.posts.length} posts` +
+    (bad.length ? ` · <span class="bad" title="${esc(bad.map((s) => s.name + ": " + s.error).join("\n"))}">${bad.length} failed: ${esc(bad.map((s) => s.name).join(", "))}</span>` : "");
+}
+
+function render() { renderFilters(); renderFeed(); renderHN(); renderStatus(); }
+
+async function load(method = "GET") {
+  const res = await fetch(method === "POST" ? "/api/refresh" : "/api/news", { method });
+  data = await res.json();
+  if (active !== "all" && !data.posts.some((p) => p.org === active)) active = "all";
+  render();
+}
+
+$("filters").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-f]");
+  if (!b) return;
+  active = b.dataset.f;
+  store.set("ainews.filter", active);
+  renderFilters(); renderFeed();
+});
+$("q").addEventListener("input", () => { renderFeed(); renderHN(); });
+$("refresh").addEventListener("click", async () => {
+  const b = $("refresh");
+  b.classList.add("spin"); b.disabled = true;
+  try { await load("POST"); } finally { b.classList.remove("spin"); b.disabled = false; }
+});
+$("theme").addEventListener("click", () => {
+  const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#141412";
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  store.set("ainews.theme", document.documentElement.dataset.theme);
+});
+const savedTheme = store.get("ainews.theme", null);
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't reach the server.</div>`; });
+setInterval(() => load().catch(() => {}), 5 * 60 * 1000); // pick up background refreshes
+</script>
+</body>
+</html>
