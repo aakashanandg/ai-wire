@@ -249,8 +249,11 @@ def save(data: dict):
 
 
 if __name__ == "__main__":
+    import editions
+
     data = scrape_all(load())
     save(data)
+    print(f"{editions.update(data)} daily editions updated")
     for s in data["sources"]:
         mark = "✓" if s["ok"] else "✗"
         extra = s["error"] if not s["ok"] else f"{s['count']} posts ({s.get('undated', 0)} undated, {s.get('seconds')}s)"

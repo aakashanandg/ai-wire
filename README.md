@@ -1,6 +1,6 @@
 # AI Wire
 
-One page with the latest posts from AI lab blogs, plus trending AI stories on Hacker News.
+The latest posts from AI lab blogs and AI stories on Hacker News, as a **daily edition** you can read like a newsletter, or as a **live feed**.
 
 **Sources:** Anthropic (Engineering + News), OpenAI, Google DeepMind, Google Research, Meta AI, Mistral, Hugging Face, NVIDIA, Microsoft Research, Berkeley AI Research, Hacker News.
 
@@ -12,7 +12,7 @@ pip install -r requirements.txt
 python server.py            # open http://localhost:8000
 ```
 
-The server scrapes all sources at startup and then every 30 minutes (`--interval 15` to change). The page's **Refresh** button scrapes immediately. To scrape without the server, run `python scraper.py`.
+Dates follow this computer's time zone. The server scrapes all sources at startup and then every 30 minutes (`--interval 15` to change). The page's **Refresh** button scrapes immediately. To scrape without the server, run `python scraper.py`.
 
 ## How it works
 
@@ -20,8 +20,9 @@ The server scrapes all sources at startup and then every 30 minutes (`--interval
 |---|---|
 | `sources.py` | The list of sources. Add one by adding an entry. |
 | `scraper.py` | Fetches all sources in parallel, normalizes posts to `{title, url, date, summary, source}`, and writes `data/news.json`. |
+| `editions.py` | Files each post under the day it was published and saves one edition per day in `data/editions/`. Editions are only added to, so old days stay complete after posts drop off the source feeds. |
 | `server.py` | Serves the page and `/api/news`, and refreshes in the background. Python standard library only. |
-| `static/index.html` | The page: filters by lab, search, "New" markers since your last visit, light/dark theme. |
+| `static/index.html` | The page. **Daily edition** (default): one day at a time with top Hacker News stories then posts grouped by lab; use ← → or the date menu to move between days, and share a day with a link like `/#2026-09-22`. **Live feed**: everything newest first, with lab filters and search. Dark mode by default. |
 
 Three kinds of source:
 

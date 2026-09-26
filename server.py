@@ -6,6 +6,8 @@
 Endpoints:
     GET  /              the page
     GET  /api/news      all posts + source status (JSON)
+    GET  /api/editions  list of daily editions, newest first
+    GET  /api/editions/YYYY-MM-DD   one daily edition
     POST /api/refresh   scrape now (returns when done)
 """
 
@@ -16,6 +18,7 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import editions
 import scraper
 
 STATIC = Path(__file__).parent / "static"
@@ -27,6 +30,7 @@ def refresh():
     with lock:
         data = scraper.scrape_all(scraper.load())
         scraper.save(data)
+        editions.update(data)
         ok = sum(s["ok"] for s in data["sources"])
         print(f"[{time.strftime('%H:%M:%S')}] refreshed: {len(data['posts'])} posts, {ok}/{len(data['sources'])} sources ok")
 
@@ -45,8 +49,14 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(STATIC), **kwargs)
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/api/news":
+        path = self.path.split("?")[0]
+        if path == "/api/news":
             return self.send_json(scraper.load() or {"updated": None, "sources": [], "posts": []})
+        if path == "/api/editions":
+            return self.send_json(editions.index())
+        if path.startswith("/api/editions/"):
+            edition = editions.get(path.rsplit("/", 1)[1])
+            return self.send_json(edition) if edition else self.send_error(404, "No edition for that day")
         return super().do_GET()
 
     def do_POST(self):

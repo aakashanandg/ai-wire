@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -110,12 +110,54 @@ aside { align-self: start; position: sticky; top: 88px; }
 .hn .m { font-size: 12px; color: var(--faint); margin-top: 3px; }
 .hn .m a:hover { color: var(--text); text-decoration: underline; }
 
+/* View switch */
+.views { display: inline-flex; background: var(--chip); border-radius: 10px; padding: 3px; gap: 2px; }
+.views button { border: 0; background: none; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.views button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+body[data-view="edition"] .live-only, body[data-view="live"] .edition-only { display: none !important; }
+
+/* Daily edition */
+.edition { max-width: 720px; margin: 0 auto; padding: 36px 0 72px; }
+.ed-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 36px; }
+.ed-nav button { white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); }
+.ed-nav button:hover:not(:disabled) { color: var(--text); }
+.ed-nav button:disabled { opacity: .35; cursor: default; }
+.ed-nav select { min-width: 0; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; padding: 0 8px; margin: 0 auto; max-width: 60%; }
+.kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.edition h1 { font: 600 46px/1.08 Newsreader, Georgia, serif; letter-spacing: -0.02em; margin: 10px 0 12px; }
+.lede { font-size: 17px; color: var(--muted); margin: 0; }
+.lede b { color: var(--text); font-weight: 500; }
+.ed-sec { margin-top: 44px; }
+.ed-sec > h2 { display: flex; align-items: center; gap: 10px; font: 600 13px/1 Inter, sans-serif; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.ed-sec > h2 .n { margin-left: auto; font-weight: 500; color: var(--faint); letter-spacing: 0; }
+.ed-item { display: block; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.ed-item:hover .title { color: var(--accent); }
+.ed-item .meta { margin: 6px 0 0; }
+.ed-hn { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.ed-hn .rank { font: 600 20px Newsreader, serif; color: var(--faint); }
+.ed-hn .t { font: 500 18px/1.3 Newsreader, Georgia, serif; }
+.ed-hn .t:hover { color: var(--accent); }
+.ed-hn .pts { color: var(--hn); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.ed-hn .m { grid-column: 2 / 4; font-size: 12.5px; color: var(--faint); }
+.ed-hn .m a:hover { color: var(--text); text-decoration: underline; }
+.quiet { color: var(--faint); font-style: italic; margin-top: 36px; font-size: 14px; }
+.ed-empty { padding: 40px 0; color: var(--muted); }
+.ed-empty button { margin-top: 12px; }
+@media (max-width: 600px) {
+  .edition { padding-top: 24px; } .edition h1 { font-size: 34px; }
+  .ed-hn .t { font-size: 16.5px; } .ed-nav select { min-width: 0; max-width: 50%; }
+}
+
 .empty { padding: 48px 0; color: var(--muted); text-align: center; }
 footer { color: var(--faint); font-size: 12.5px; padding: 0 0 40px; }
 footer .bad { color: var(--accent); }
 
 @media (max-width: 600px) {
   .wrap { padding: 0 16px; }
+  .views button { padding: 6px 7px; font-size: 12.5px; }
+  .bar { gap: 6px; } .logo { font-size: 20px; }
+  .icon-btn { min-width: 34px; height: 34px; padding: 0 8px; }
+  .ed-nav .lbl { display: none; }
   .bar { height: auto; flex-wrap: wrap; padding: 12px 0; gap: 10px; }
   .search { order: 3; flex-basis: 100%; max-width: none; }
   .title { font-size: 18px; }
@@ -129,7 +171,11 @@ footer .bad { color: var(--accent); }
   <div class="wrap">
     <div class="bar">
       <div class="logo">AI <span>Wire</span></div>
-      <label class="search">
+      <div class="views" id="views" role="group" aria-label="View">
+        <button data-v="edition">Daily edition</button>
+        <button data-v="live">Live feed</button>
+      </div>
+      <label class="search live-only">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts">
       </label>
@@ -141,12 +187,13 @@ footer .bad { color: var(--accent); }
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
     </div>
-    <nav class="filters" id="filters" aria-label="Filter by source"></nav>
+    <nav class="filters live-only" id="filters" aria-label="Filter by source"></nav>
   </div>
 </header>
 
 <main class="wrap">
-  <div class="layout">
+  <article class="edition edition-only" id="edition" aria-live="polite"></article>
+  <div class="layout live-only">
     <section id="feed" aria-live="polite"><div class="empty">Loading…</div></section>
     <aside>
       <div class="rail">
@@ -157,7 +204,7 @@ footer .bad { color: var(--accent); }
     </aside>
   </div>
 </main>
-<footer class="wrap" id="status"></footer>
+<footer class="wrap live-only" id="status"></footer>
 
 <script>
 const ORG_COLORS = {
@@ -283,18 +330,109 @@ $("q").addEventListener("input", () => { renderFeed(); renderHN(); });
 $("refresh").addEventListener("click", async () => {
   const b = $("refresh");
   b.classList.add("spin"); b.disabled = true;
-  try { await load("POST"); } finally { b.classList.remove("spin"); b.disabled = false; }
+  try { await load("POST"); await loadEditions(); } finally { b.classList.remove("spin"); b.disabled = false; }
 });
 $("theme").addEventListener("click", () => {
   const dark = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#141412";
   document.documentElement.dataset.theme = dark ? "light" : "dark";
-  store.set("ainews.theme", document.documentElement.dataset.theme);
+  store.set("aiwire.theme", document.documentElement.dataset.theme);
 });
-const savedTheme = store.get("ainews.theme", null);
+const savedTheme = store.get("aiwire.theme", "dark");
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 
-load().catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't reach the server.</div>`; });
-setInterval(() => load().catch(() => {}), 5 * 60 * 1000); // pick up background refreshes
+// ---- Daily edition ---------------------------------------------------------
+let editions = [], edDay = null;
+const linkedDay = location.hash.match(/^#(\d{4}-\d{2}-\d{2})$/)?.[1];
+
+const fmtDay = (day, opts) => new Date(day + "T12:00:00").toLocaleDateString(undefined, opts);
+const todayStr = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+
+function edLabel(day) {
+  const diff = Math.round((new Date(todayStr()) - new Date(day)) / 86400000);
+  return diff === 0 ? "Today" : diff === 1 ? "Yesterday" : fmtDay(day, { weekday: "long" });
+}
+
+async function loadEditions() {
+  editions = await (await fetch("/api/editions")).json();
+  if (!edDay || !editions.some((e) => e.date === edDay))
+    edDay = editions.some((e) => e.date === linkedDay) ? linkedDay : editions[0]?.date;
+  await showEdition(edDay);
+}
+
+async function showEdition(day) {
+  if (!day) { $("edition").innerHTML = `<div class="ed-empty">No editions yet. Try Refresh.</div>`; return; }
+  edDay = day;
+  history.replaceState(null, "", view === "edition" ? "#" + day : location.pathname);
+  const res = await fetch("/api/editions/" + day);
+  const ed = res.ok ? await res.json() : null;
+  const i = editions.findIndex((e) => e.date === day);
+  const older = editions[i + 1]?.date, newer = editions[i - 1]?.date;
+  const isToday = day === todayStr();
+
+  const nav = `<nav class="ed-nav">
+    <button data-go="${older || ""}" ${older ? "" : "disabled"} aria-label="Older edition">← <span class="lbl">Older</span></button>
+    <select id="ed-pick" aria-label="Choose an edition">${editions.map((e) =>
+      `<option value="${e.date}" ${e.date === day ? "selected" : ""}>${fmtDay(e.date, { weekday: "short", month: "short", day: "numeric" })} · ${e.labs + e.hn} stories</option>`).join("")}</select>
+    <button data-go="${newer || ""}" ${newer ? "" : "disabled"} aria-label="Newer edition"><span class="lbl">Newer</span> →</button></nav>`;
+
+  if (!ed) { $("edition").innerHTML = nav + `<div class="ed-empty">No edition for this day.</div>`; return; }
+  const c = ed.counts;
+  const lede = c.labs || c.hn
+    ? `<b>${c.labs} post${c.labs === 1 ? "" : "s"}</b> from ${c.orgs} lab${c.orgs === 1 ? "" : "s"} and <b>${c.hn} ${c.hn === 1 ? "story" : "stories"}</b> on Hacker News` +
+      (isToday ? `, so far today. Updates every 30 minutes.` : ".")
+    : "A quiet day.";
+
+  let html = nav + `<div class="kicker">AI Wire · ${isToday ? "Today's edition" : edLabel(day) + "'s edition"}</div>
+    <h1>${fmtDay(day, { weekday: "long", month: "long", day: "numeric" })}</h1><p class="lede">${lede}</p>`;
+
+  if (ed.hn.length) {
+    html += `<section class="ed-sec"><h2>Top on Hacker News<span class="n">${c.hn}</span></h2>` + ed.hn.map((p, n) => {
+      let host = ""; try { host = new URL(p.url).hostname.replace(/^www\./, ""); } catch {}
+      return `<div class="ed-hn"><span class="rank">${n + 1}</span>
+        <a class="t" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <span class="pts">▲ ${p.points}</span>
+        <div class="m">${esc(host)} · <a href="${esc(safeUrl(p.discussion))}" target="_blank" rel="noopener">${p.comments} comments</a></div></div>`;
+    }).join("") + `</section>`;
+  }
+  for (const g of ed.labs) {
+    html += `<section class="ed-sec"><h2><span class="dot" style="background:${ORG_COLORS[g.org] || "var(--faint)"}"></span>${esc(g.org)}<span class="n">${g.posts.length}</span></h2>` +
+      g.posts.map((p) => `<a class="ed-item" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener">
+        <h3 class="title">${esc(p.title)}</h3>${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
+        <div class="meta"><span>${esc(p.source_name)}</span>${isNew(p) ? '<span class="new">New</span>' : ""}</div></a>`).join("") + `</section>`;
+  }
+  const quiet = [...new Set(data.sources.filter((s) => s.id !== "hn").map((s) => s.org))].filter((o) => !ed.labs.some((g) => g.org === o));
+  if (quiet.length && ed.labs.length) html += `<p class="quiet">Nothing from ${esc(quiet.join(", "))}${isToday ? " yet" : ""}.</p>`;
+  if (!ed.labs.length && !ed.hn.length && older)
+    html += `<div class="ed-empty">Nothing published yet. <br><button class="icon-btn" data-go="${older}">Read ${edLabel(older).toLowerCase()}'s edition</button></div>`;
+  $("edition").innerHTML = html;
+}
+
+$("edition").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-go]");
+  if (b?.dataset.go) { showEdition(b.dataset.go); scrollTo({ top: 0 }); }
+});
+$("edition").addEventListener("change", (e) => { if (e.target.id === "ed-pick") showEdition(e.target.value); });
+document.addEventListener("keydown", (e) => {
+  if (view !== "edition" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  const i = editions.findIndex((x) => x.date === edDay);
+  if (e.key === "ArrowLeft" && editions[i + 1]) showEdition(editions[i + 1].date);
+  if (e.key === "ArrowRight" && i > 0) showEdition(editions[i - 1].date);
+});
+
+// ---- View switch ------------------------------------------------------------
+let view = linkedDay ? "edition" : store.get("aiwire.view", "edition");
+function setView(v) {
+  view = v;
+  document.body.dataset.view = v;
+  store.set("aiwire.view", v);
+  document.querySelectorAll("#views button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+  history.replaceState(null, "", v === "edition" && edDay ? "#" + edDay : location.pathname);
+}
+$("views").addEventListener("click", (e) => { const b = e.target.closest("[data-v]"); if (b) setView(b.dataset.v); });
+setView(view);
+
+load().then(loadEditions).catch(() => { $("feed").innerHTML = `<div class="empty">Couldn't reach the server.</div>`; });
+setInterval(() => load().then(loadEditions).catch(() => {}), 5 * 60 * 1000); // pick up background refreshes
 </script>
 </body>
 </html>
